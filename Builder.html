@@ -2,409 +2,341 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Alpha Space — Project Builder</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Alpha Space — Level the Playing Field</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: 'Segoe UI', sans-serif; background: #0a0a1a; color: #eee; margin: 0; padding: 40px 20px; text-align: center; }
-  h1 { color: #ffb627; }
-  p { color: #ccc; max-width: 600px; margin: 15px auto; line-height: 1.6; }
-  button { background: linear-gradient(135deg,#ffb627,#ff7e00); color: #111; padding: 18px 40px; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; margin-top: 20px; }
-  button:hover { opacity: .9; }
-  button:disabled { opacity: .5; cursor: not-allowed; }
-  #status { margin-top: 25px; color: #ffb627; font-weight: bold; min-height: 24px; }
-  .files { background: #16163a; border-radius: 10px; padding: 20px; max-width: 600px; margin: 30px auto; text-align: left; }
-  .files h3 { color: #ffb627; margin-top: 0; }
-  .files ul { color: #aaa; line-height: 1.8; }
-  code { background: #2a2a4a; padding: 2px 8px; border-radius: 4px; color: #ffb627; }
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+body { background:#0a0a1a; color:#eee; line-height:1.6; }
+a { color:#ffb627; text-decoration:none; cursor:pointer; }
+.container { max-width:1200px; margin:0 auto; padding:20px; }
+nav { background:#11112a; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; box-shadow:0 2px 10px rgba(0,0,0,.5); flex-wrap:wrap; gap:10px; }
+nav .logo { font-size:1.4rem; font-weight:bold; color:#ffb627; cursor:pointer; }
+nav ul { display:flex; gap:18px; list-style:none; align-items:center; flex-wrap:wrap; }
+nav ul li a { color:#ddd; font-weight:500; }
+nav ul li a:hover { color:#ffb627; }
+.btn { background:linear-gradient(135deg,#ffb627,#ff7e00); color:#111; padding:10px 20px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; display:inline-block; text-decoration:none; }
+.btn:hover { opacity:.9; }
+.btn-outline { background:transparent; border:2px solid #ffb627; color:#ffb627; }
+.btn-secondary { background:#2a2a4a; color:#eee; }
+.hero { text-align:center; padding:80px 20px; background:linear-gradient(135deg,#1a1a3a,#0a0a1a); }
+.hero h1 { font-size:3rem; color:#ffb627; margin-bottom:20px; }
+.hero p { font-size:1.2rem; max-width:800px; margin:0 auto 30px; color:#ccc; }
+.features { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:25px; padding:60px 20px; max-width:1200px; margin:0 auto; }
+.feature-card { background:#16163a; padding:30px; border-radius:12px; border:1px solid #2a2a4a; transition:.3s; }
+.feature-card:hover { transform:translateY(-5px); border-color:#ffb627; }
+.feature-card h3 { color:#ffb627; margin-bottom:12px; }
+.card { background:#16163a; padding:20px; border-radius:10px; border:1px solid #2a2a4a; margin-bottom:18px; }
+.input,textarea,select { width:100%; padding:12px; background:#0a0a1a; border:1px solid #2a2a4a; color:#eee; border-radius:6px; margin:8px 0; font-size:1rem; }
+.input:focus,textarea:focus,select:focus { outline:none; border-color:#ffb627; }
+.form-card { max-width:460px; margin:60px auto; background:#16163a; padding:35px; border-radius:12px; }
+.form-card h2 { color:#ffb627; margin-bottom:20px; text-align:center; }
+.tag { display:inline-block; background:#ff7e00; color:#111; padding:4px 10px; border-radius:20px; font-size:.8rem; font-weight:bold; }
+.coming-soon { background:#444; color:#fff; }
+footer { background:#11112a; padding:40px 20px; margin-top:60px; text-align:center; border-top:1px solid #2a2a4a; }
+footer a { margin:0 10px; color:#ffb627; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px; }
+.notif { background:#1a1a3a; padding:12px; border-left:3px solid #ffb627; margin-bottom:8px; border-radius:4px; }
+.notif.unread { background:#2a2a4a; }
+.msg { padding:10px 14px; border-radius:14px; margin:6px 0; max-width:70%; word-wrap:break-word; }
+.msg.sent { background:#ff7e00; color:#111; margin-left:auto; }
+.msg.received { background:#2a2a4a; }
+.search-bar { display:flex; gap:10px; margin:20px 0; }
+.flex { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.page { display:none; }
+.page.active { display:block; }
+@media (max-width:700px){ .hero h1 { font-size:2rem; } nav { flex-direction:column; } }
 </style>
 </head>
 <body>
 
-<h1>⚡ The Alpha Space — Project Builder</h1>
-<p>Click the button below to download the entire project as a ZIP file. Unzip it, run the SQL in your Supabase dashboard, and open <code>index.html</code> in your browser.</p>
-
-<button id="dl" onclick="buildZip()">⬇️ Download alpha-space.zip</button>
-<div id="status"></div>
-
-<div class="files">
-  <h3>📦 What's included (12 files)</h3>
-  <ul>
-    <li>📄 <code>README.md</code> — setup instructions</li>
-    <li>🗄️ <code>schema.sql</code> — paste into Supabase SQL Editor</li>
-    <li>🏠 <code>index.html</code>, <code>auth.html</code>, <code>dashboard.html</code></li>
-    <li>👤 <code>profile.html</code>, <code>messages.html</code></li>
-    <li>🎓 <code>skills.html</code>, <code>scholarships.html</code></li>
-    <li>💬 <code>forum.html</code>, <code>investors.html</code></li>
-    <li>🎨 <code>css/style.css</code></li>
-    <li>⚙️ <code>js/supabase.js</code>, <code>js/dashboard.js</code>, <code>js/profile.js</code></li>
-  </ul>
-</div>
-
-<script>
-const files = {};
-
-files['README.md'] = `# The Alpha Space
-
-A platform that brings opportunities to everyone — learn digital skills, connect with mentors, find scholarships, and network globally.
-
-## 🚀 Setup (3 steps)
-
-### 1. Set up Supabase
-- Go to your Supabase project → SQL Editor → New Query
-- Paste the contents of \`schema.sql\` and click Run
-- (Optional) Auth → Providers → Email → toggle off "Confirm email" for faster testing
-
-### 2. Run locally
-Just open \`index.html\` in your browser — that's it!
-
-Or run a tiny local server (recommended):
-\`\`\`
-python -m http.server 8000
-\`\`\`
-Then visit http://localhost:8000
-
-### 3. Deploy free
-- **Netlify**: drag the folder onto https://app.netlify.com/drop
-- **Vercel**: push to GitHub and connect at https://vercel.com
-- **GitHub Pages**: push to a repo and enable Pages
-
-## 📞 Contact
-- X: @Sol_auris
-- Email: alphabenjamin206@gmail.com
-- WhatsApp: +234 916 1488 011
-`;
-
-files['schema.sql'] = `-- =========================================
--- THE ALPHA SPACE - DATABASE SCHEMA
--- Run this in Supabase SQL Editor
--- =========================================
-
-create table public.profiles (
-  id uuid references auth.users on delete cascade primary key,
-  username text unique not null,
-  full_name text,
-  role text check (role in ('learner','mentor','investor')) default 'learner',
-  bio text,
-  skills text,
-  location text,
-  expertise text,
-  avatar_url text,
-  created_at timestamptz default now()
-);
-
-create table public.friendships (
-  id bigserial primary key,
-  requester uuid references public.profiles(id) on delete cascade,
-  addressee uuid references public.profiles(id) on delete cascade,
-  status text check (status in ('pending','accepted')) default 'pending',
-  created_at timestamptz default now(),
-  unique(requester, addressee)
-);
-
-create table public.follows (
-  id bigserial primary key,
-  follower uuid references public.profiles(id) on delete cascade,
-  following uuid references public.profiles(id) on delete cascade,
-  created_at timestamptz default now(),
-  unique(follower, following)
-);
-
-create table public.posts (
-  id bigserial primary key,
-  author uuid references public.profiles(id) on delete cascade,
-  content text not null,
-  created_at timestamptz default now()
-);
-
-create table public.likes (
-  id bigserial primary key,
-  post_id bigint references public.posts(id) on delete cascade,
-  user_id uuid references public.profiles(id) on delete cascade,
-  created_at timestamptz default now(),
-  unique(post_id, user_id)
-);
-
-create table public.comments (
-  id bigserial primary key,
-  post_id bigint references public.posts(id) on delete cascade,
-  parent_id bigint references public.comments(id) on delete cascade,
-  author uuid references public.profiles(id) on delete cascade,
-  content text not null,
-  created_at timestamptz default now()
-);
-
-create table public.messages (
-  id bigserial primary key,
-  sender uuid references public.profiles(id) on delete cascade,
-  receiver uuid references public.profiles(id) on delete cascade,
-  content text not null,
-  read boolean default false,
-  created_at timestamptz default now()
-);
-
-create table public.notifications (
-  id bigserial primary key,
-  user_id uuid references public.profiles(id) on delete cascade,
-  actor uuid references public.profiles(id) on delete cascade,
-  type text,
-  reference_id bigint,
-  message text,
-  read boolean default false,
-  created_at timestamptz default now()
-);
-
-create table public.forum_threads (
-  id bigserial primary key,
-  author uuid references public.profiles(id) on delete cascade,
-  title text not null,
-  body text,
-  category text default 'General',
-  created_at timestamptz default now()
-);
-
-create table public.forum_replies (
-  id bigserial primary key,
-  thread_id bigint references public.forum_threads(id) on delete cascade,
-  author uuid references public.profiles(id) on delete cascade,
-  body text not null,
-  created_at timestamptz default now()
-);
-
-create table public.course_recommendations (
-  id bigserial primary key,
-  user_id uuid references public.profiles(id) on delete cascade,
-  course_name text not null,
-  reason text,
-  created_at timestamptz default now()
-);
-
--- ROW LEVEL SECURITY
-alter table public.profiles enable row level security;
-alter table public.friendships enable row level security;
-alter table public.follows enable row level security;
-alter table public.posts enable row level security;
-alter table public.likes enable row level security;
-alter table public.comments enable row level security;
-alter table public.messages enable row level security;
-alter table public.notifications enable row level security;
-alter table public.forum_threads enable row level security;
-alter table public.forum_replies enable row level security;
-alter table public.course_recommendations enable row level security;
-
-create policy "Profiles are viewable by everyone" on profiles for select using (true);
-create policy "Users can insert own profile" on profiles for insert with check (auth.uid() = id);
-create policy "Users can update own profile" on profiles for update using (auth.uid() = id);
-
-create policy "View friendships involving you" on friendships for select using (auth.uid() = requester or auth.uid() = addressee);
-create policy "Send friend requests" on friendships for insert with check (auth.uid() = requester);
-create policy "Update friendships involving you" on friendships for update using (auth.uid() = requester or auth.uid() = addressee);
-create policy "Delete friendships involving you" on friendships for delete using (auth.uid() = requester or auth.uid() = addressee);
-
-create policy "Follows visible to all" on follows for select using (true);
-create policy "Follow others" on follows for insert with check (auth.uid() = follower);
-create policy "Unfollow" on follows for delete using (auth.uid() = follower);
-
-create policy "Posts visible to all" on posts for select using (true);
-create policy "Authenticated can post" on posts for insert with check (auth.uid() = author);
-create policy "Authors can update posts" on posts for update using (auth.uid() = author);
-create policy "Authors can delete posts" on posts for delete using (auth.uid() = author);
-
-create policy "Likes visible to all" on likes for select using (true);
-create policy "Users can like" on likes for insert with check (auth.uid() = user_id);
-create policy "Users can unlike" on likes for delete using (auth.uid() = user_id);
-
-create policy "Comments visible to all" on comments for select using (true);
-create policy "Authenticated can comment" on comments for insert with check (auth.uid() = author);
-create policy "Authors can delete comments" on comments for delete using (auth.uid() = author);
-
-create policy "View own messages" on messages for select using (auth.uid() = sender or auth.uid() = receiver);
-create policy "Send messages" on messages for insert with check (auth.uid() = sender);
-create policy "Mark read" on messages for update using (auth.uid() = receiver);
-
-create policy "View own notifications" on notifications for select using (auth.uid() = user_id);
-create policy "Anyone can create notifications" on notifications for insert with check (true);
-create policy "Mark notifications read" on notifications for update using (auth.uid() = user_id);
-
-create policy "Threads visible" on forum_threads for select using (true);
-create policy "Auth can create threads" on forum_threads for insert with check (auth.uid() = author);
-create policy "Authors update threads" on forum_threads for update using (auth.uid() = author);
-create policy "Replies visible" on forum_replies for select using (true);
-create policy "Auth can reply" on forum_replies for insert with check (auth.uid() = author);
-
-create policy "Recommendations visible" on course_recommendations for select using (true);
-create policy "Auth can recommend" on course_recommendations for insert with check (auth.uid() = user_id);
-`;
-
-files['css/style.css'] = `* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-body { background: #0a0a1a; color: #eee; line-height: 1.6; }
-a { color: #ffb627; text-decoration: none; }
-.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-nav { background: #11112a; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,.5); }
-nav .logo { font-size: 1.4rem; font-weight: bold; color: #ffb627; }
-nav ul { display: flex; gap: 22px; list-style: none; align-items: center; flex-wrap: wrap; }
-nav ul li a { color: #ddd; font-weight: 500; }
-nav ul li a:hover { color: #ffb627; }
-.btn { background: linear-gradient(135deg,#ffb627,#ff7e00); color: #111; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-block; }
-.btn:hover { opacity: .9; }
-.btn-outline { background: transparent; border: 2px solid #ffb627; color: #ffb627; }
-.btn-secondary { background: #2a2a4a; color: #eee; }
-.hero { text-align: center; padding: 80px 20px; background: linear-gradient(135deg,#1a1a3a,#0a0a1a); }
-.hero h1 { font-size: 3rem; color: #ffb627; margin-bottom: 20px; }
-.hero p { font-size: 1.2rem; max-width: 800px; margin: 0 auto 30px; color: #ccc; }
-.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 25px; padding: 60px 20px; max-width: 1200px; margin: 0 auto; }
-.feature-card { background: #16163a; padding: 30px; border-radius: 12px; border: 1px solid #2a2a4a; transition: .3s; }
-.feature-card:hover { transform: translateY(-5px); border-color: #ffb627; }
-.feature-card h3 { color: #ffb627; margin-bottom: 12px; }
-.card { background: #16163a; padding: 20px; border-radius: 10px; border: 1px solid #2a2a4a; margin-bottom: 18px; }
-.input, textarea, select { width: 100%; padding: 12px; background: #0a0a1a; border: 1px solid #2a2a4a; color: #eee; border-radius: 6px; margin: 8px 0; font-size: 1rem; }
-.input:focus, textarea:focus, select:focus { outline: none; border-color: #ffb627; }
-.form-card { max-width: 460px; margin: 60px auto; background: #16163a; padding: 35px; border-radius: 12px; }
-.form-card h2 { color: #ffb627; margin-bottom: 20px; text-align: center; }
-.tag { display: inline-block; background: #ff7e00; color: #111; padding: 4px 10px; border-radius: 20px; font-size: .8rem; font-weight: bold; }
-.coming-soon { background: #444; color: #fff; }
-footer { background: #11112a; padding: 40px 20px; margin-top: 60px; text-align: center; border-top: 1px solid #2a2a4a; }
-footer a { margin: 0 10px; color: #ffb627; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-.notif { background: #1a1a3a; padding: 12px; border-left: 3px solid #ffb627; margin-bottom: 8px; border-radius: 4px; }
-.notif.unread { background: #2a2a4a; }
-.msg { padding: 10px 14px; border-radius: 14px; margin: 6px 0; max-width: 70%; }
-.msg.sent { background: #ff7e00; color: #111; margin-left: auto; }
-.msg.received { background: #2a2a4a; }
-.search-bar { display: flex; gap: 10px; margin: 20px 0; }
-.flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.badge { background: #ff7e00; color: #111; border-radius: 50%; padding: 2px 7px; font-size: .75rem; margin-left: 4px; }
-@media (max-width: 700px){ .hero h1 { font-size: 2rem; } nav { flex-direction: column; gap: 10px; } }
-`;
-
-files['js/supabase.js'] = `const SUPABASE_URL = 'https://qafiirpzzfcqfjvlpxkr.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZmlpcnB6emZjcWZqdmxweGtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDAzODMsImV4cCI6MjA5MzExNjM4M30.r4JH5ymeMTnAHA0jvyheGe6veZA9MBOk7WYG1hy8wZA';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-async function requireAuth() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) { window.location.href = 'auth.html'; return null; }
-  return user;
-}
-
-async function getCurrentProfile() {
-  const user = await requireAuth();
-  if (!user) return null;
-  const { data } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-  return data;
-}
-
-async function logout() {
-  await supabaseClient.auth.signOut();
-  window.location.href = 'index.html';
-}
-`;
-
-files['index.html'] = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The Alpha Space — Level the Playing Field</title>
-<link rel="stylesheet" href="css/style.css">
-</head>
-<body>
 <nav>
-  <div class="logo">⚡ The Alpha Space</div>
+  <div class="logo" onclick="go('home')">⚡ The Alpha Space</div>
   <ul>
-    <li><a href="skills.html">Skills</a></li>
-    <li><a href="scholarships.html">Scholarships</a></li>
-    <li><a href="forum.html">Forum</a></li>
-    <li><a href="investors.html">Investors</a></li>
-    <li><a href="auth.html" class="btn">Sign In</a></li>
+    <li><a onclick="go('skills')">Skills</a></li>
+    <li><a onclick="go('scholarships')">Scholarships</a></li>
+    <li><a onclick="go('forum')">Forum</a></li>
+    <li><a onclick="go('investors')">Investors</a></li>
+    <li id="navAuth"></li>
   </ul>
 </nav>
 
-<section class="hero">
-  <h1>Opportunity for Everyone</h1>
-  <p>Learn in-demand digital skills, connect with mentors and coaches, discover schools and scholarships, and get matched with collaborators who believe in your vision. Access should be equal — irrespective of class, age, gender, race, or region.</p>
-  <a href="auth.html" class="btn">Get Started Free</a>
-  <a href="skills.html" class="btn btn-outline">Explore Skills</a>
-</section>
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <section class="hero">
+    <h1>Opportunity for Everyone</h1>
+    <p>Learn in-demand digital skills, connect with mentors and coaches, discover schools and scholarships, and get matched with collaborators who believe in your vision. Access should be equal — irrespective of class, age, gender, race, or region.</p>
+    <a class="btn" onclick="go('auth')">Get Started Free</a>
+    <a class="btn btn-outline" onclick="go('skills')">Explore Skills</a>
+  </section>
+  <section class="features">
+    <div class="feature-card"><h3>🎓 Free Digital Skills</h3><p>Curated free courses from Alison, Coursera, edX, freeCodeCamp, Khan Academy & more.</p></div>
+    <div class="feature-card"><h3>🤝 Mentors & Coaches</h3><p>Follow experienced mentors. Message them privately. Grow with guidance.</p></div>
+    <div class="feature-card"><h3>🏫 Schools & Scholarships</h3><p>Real free universities and live scholarship opportunities updated regularly.</p></div>
+    <div class="feature-card"><h3>💬 Global Forum</h3><p>Network with people across the world. No geography. Just opportunity.</p></div>
+    <div class="feature-card"><h3>💼 Investors <span class="tag coming-soon">Coming Soon</span></h3><p>Get matched with investors who believe in your vision.</p></div>
+    <div class="feature-card"><h3>📩 Recommend Courses</h3><p>Tell us what you want to learn. We update weekly.</p></div>
+  </section>
+</div>
 
-<section class="features">
-  <div class="feature-card"><h3>🎓 Free Digital Skills</h3><p>Curated free courses from Alison, Coursera, edX, freeCodeCamp, Khan Academy & more.</p></div>
-  <div class="feature-card"><h3>🤝 Mentors & Coaches</h3><p>Follow experienced mentors. Message them privately. Grow with guidance.</p></div>
-  <div class="feature-card"><h3>🏫 Schools & Scholarships</h3><p>Real free universities and live scholarship opportunities updated regularly.</p></div>
-  <div class="feature-card"><h3>💬 Global Forum</h3><p>Network with people across the world. No geography. Just opportunity.</p></div>
-  <div class="feature-card"><h3>💼 Investors <span class="tag coming-soon">Coming Soon</span></h3><p>Get matched with investors who believe in your vision.</p></div>
-  <div class="feature-card"><h3>📩 Recommend Courses</h3><p>Tell us what you want to learn. We update weekly.</p></div>
-</section>
+<!-- AUTH -->
+<div id="page-auth" class="page">
+  <div class="form-card" id="signinBox">
+    <h2>Welcome Back</h2>
+    <input type="email" id="loginEmail" class="input" placeholder="Email">
+    <input type="password" id="loginPass" class="input" placeholder="Password">
+    <button class="btn" style="width:100%" onclick="doLogin()">Sign In</button>
+    <p style="text-align:center;margin-top:15px;">No account? <a onclick="toggleForms()">Sign Up</a></p>
+  </div>
+  <div class="form-card" id="signupBox" style="display:none;">
+    <h2>Join The Alpha Space</h2>
+    <input type="text" id="suUsername" class="input" placeholder="Username (unique)">
+    <input type="text" id="suFullname" class="input" placeholder="Full name">
+    <input type="email" id="suEmail" class="input" placeholder="Email">
+    <input type="password" id="suPass" class="input" placeholder="Password (min 6 chars)">
+    <select id="suRole" class="input">
+      <option value="learner">I'm a Learner</option>
+      <option value="mentor">I'm a Coach / Mentor</option>
+      <option value="investor">I'm a Collaborator / Investor</option>
+    </select>
+    <button class="btn" style="width:100%" onclick="doSignup()">Create Account</button>
+    <p style="text-align:center;margin-top:15px;">Have an account? <a onclick="toggleForms()">Sign In</a></p>
+  </div>
+  <p id="authMsg" style="text-align:center;color:#ffb627;"></p>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page">
+  <div class="container">
+    <div class="card">
+      <h2 style="color:#ffb627">🔍 Find People</h2>
+      <div class="search-bar">
+        <input id="searchInput" class="input" placeholder="Search by username...">
+        <button class="btn" onclick="searchUsers()">Search</button>
+      </div>
+      <div id="searchResults" class="grid"></div>
+    </div>
+    <div class="card">
+      <h2 style="color:#ffb627">🔔 Notifications</h2>
+      <div id="notifications"></div>
+    </div>
+    <div class="card">
+      <h2 style="color:#ffb627">✏️ Share an update</h2>
+      <textarea id="postContent" rows="3" placeholder="What's happening?"></textarea>
+      <button class="btn" onclick="createPost()">Post</button>
+    </div>
+    <h2 style="color:#ffb627;margin-top:20px;">📰 Feed</h2>
+    <div id="feed"></div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div id="page-profile" class="page">
+  <div class="container" id="profileArea"></div>
+</div>
+
+<!-- SKILLS -->
+<div id="page-skills" class="page">
+  <div class="container">
+    <h1 style="color:#ffb627">🎓 Free Digital Skills</h1>
+    <p style="color:#aaa">100% free, real, and updated weekly. Click any course to start learning.</p>
+    <div class="card">
+      <h3>📩 Recommend a Course</h3>
+      <p style="color:#aaa">Tell us what you'd like added — we update weekly.</p>
+      <input id="recName" class="input" placeholder="Course name / topic">
+      <textarea id="recReason" rows="2" placeholder="Why? (optional)"></textarea>
+      <button class="btn" onclick="recommend()">Submit Recommendation</button>
+      <p id="recMsg" style="color:#ffb627;margin-top:8px"></p>
+    </div>
+    <h2 style="color:#ffb627;margin-top:30px">Browse Free Courses</h2>
+    <div class="grid" id="courses"></div>
+  </div>
+</div>
+
+<!-- SCHOLARSHIPS -->
+<div id="page-scholarships" class="page">
+  <div class="container">
+    <h1 style="color:#ffb627">🏫 Free Online Universities</h1>
+    <div class="grid">
+      <div class="feature-card"><h3>University of the People</h3><p>Tuition-free accredited online university.</p><a class="btn btn-outline" href="https://www.uopeople.edu/" target="_blank">Visit</a></div>
+      <div class="feature-card"><h3>MIT OpenCourseWare</h3><p>Free MIT course materials across all subjects.</p><a class="btn btn-outline" href="https://ocw.mit.edu/" target="_blank">Visit</a></div>
+      <div class="feature-card"><h3>Harvard Online Courses</h3><p>Free & low-cost Harvard courses online.</p><a class="btn btn-outline" href="https://pll.harvard.edu/catalog/free" target="_blank">Visit</a></div>
+      <div class="feature-card"><h3>OpenLearn (Open University)</h3><p>Free courses from the UK's Open University.</p><a class="btn btn-outline" href="https://www.open.edu/openlearn/" target="_blank">Visit</a></div>
+      <div class="feature-card"><h3>Saylor Academy</h3><p>Free college credit-eligible courses.</p><a class="btn btn-outline" href="https://www.saylor.org/" target="_blank">Visit</a></div>
+      <div class="feature-card"><h3>Stanford Online (Free)</h3><p>Free courses from Stanford University.</p><a class="btn btn-outline" href="https://online.stanford.edu/free-courses" target="_blank">Visit</a></div>
+    </div>
+    <h1 style="color:#ffb627;margin-top:40px">🎓 Active Scholarships</h1>
+    <div class="grid">
+      <div class="feature-card"><h3>Mastercard Foundation Scholars</h3><p>Full scholarship for African students.</p><a class="btn btn-outline" href="https://mastercardfdn.org/all/scholars/" target="_blank">Apply</a></div>
+      <div class="feature-card"><h3>Chevening (UK)</h3><p>Fully funded master's in the UK.</p><a class="btn btn-outline" href="https://www.chevening.org/scholarships/" target="_blank">Apply</a></div>
+      <div class="feature-card"><h3>DAAD (Germany)</h3><p>Funded study in Germany.</p><a class="btn btn-outline" href="https://www.daad.de/en/study-and-research-in-germany/scholarships/" target="_blank">Apply</a></div>
+      <div class="feature-card"><h3>Fulbright (USA)</h3><p>Funded graduate study in the USA.</p><a class="btn btn-outline" href="https://foreign.fulbrightonline.org/" target="_blank">Apply</a></div>
+      <div class="feature-card"><h3>MTN Foundation (Nigeria)</h3><p>For Nigerian undergraduate students.</p><a class="btn btn-outline" href="https://www.mtnfoundation.org.ng/" target="_blank">Apply</a></div>
+      <div class="feature-card"><h3>Commonwealth Scholarships</h3><p>For Commonwealth countries.</p><a class="btn btn-outline" href="https://cscuk.fcdo.gov.uk/scholarships/" target="_blank">Apply</a></div>
+      <div class="feature-card"><h3>Erasmus Mundus (EU)</h3><p>Funded master's across Europe.</p><a class="btn btn-outline" href="https://erasmus-plus.ec.europa.eu/opportunities/individuals/students/erasmus-mundus-joint-masters-scholarships" target="_blank">Apply</a></div>
+      <div class="feature-card"><h3>Aga Khan Foundation</h3><p>Postgraduate scholarships.</p><a class="btn btn-outline" href="https://www.akdn.org/our-agencies/aga-khan-foundation/international-scholarship-programme" target="_blank">Apply</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- FORUM -->
+<div id="page-forum" class="page">
+  <div class="container">
+    <h1 style="color:#ffb627">💬 Global Forum</h1>
+    <p style="color:#aaa">Connect, share, and network — no geography required.</p>
+    <div class="card">
+      <h3>Start a New Thread</h3>
+      <input id="thTitle" class="input" placeholder="Title">
+      <select id="thCat" class="input">
+        <option>General</option><option>Tech</option><option>Business</option><option>Career</option><option>Education</option><option>Funding</option>
+      </select>
+      <textarea id="thBody" rows="3" placeholder="Your message..."></textarea>
+      <button class="btn" onclick="newThread()">Post Thread</button>
+    </div>
+    <div id="threads"></div>
+  </div>
+</div>
+
+<!-- MESSAGES -->
+<div id="page-messages" class="page">
+  <div class="container">
+    <h1 style="color:#ffb627">💬 Messages</h1>
+    <div class="search-bar">
+      <input id="toUser" class="input" placeholder="Username to message...">
+      <button class="btn" onclick="openChat()">Open Chat</button>
+    </div>
+    <div id="chatBox" style="display:none">
+      <h3 id="chatHeader" style="color:#ffb627"></h3>
+      <div class="card" id="msgs" style="height:400px;overflow-y:auto"></div>
+      <div class="flex" style="margin-top:10px">
+        <input id="msgText" class="input" placeholder="Type a message..." style="flex:1">
+        <button class="btn" onclick="sendMsg()">Send</button>
+      </div>
+    </div>
+    <h3 style="color:#ffb627;margin-top:30px">Recent Conversations</h3>
+    <div id="convos"></div>
+  </div>
+</div>
+
+<!-- INVESTORS -->
+<div id="page-investors" class="page">
+  <div class="container" style="text-align:center;padding-top:80px">
+    <span class="tag coming-soon" style="font-size:1rem">Coming Soon</span>
+    <h1 style="color:#ffb627;margin:20px 0">💼 Investors & Collaborators</h1>
+    <p style="max-width:600px;margin:0 auto;color:#ccc;font-size:1.1rem">
+      We're building a curated space where founders, creators, and entrepreneurs get matched with investors and collaborators who believe in their vision.
+    </p>
+    <p style="margin-top:20px;color:#aaa">In the meantime, complete your profile so you're ready when we launch.</p>
+    <a class="btn" onclick="go('profile')" style="margin-top:25px">Set Up Your Profile</a>
+  </div>
+</div>
 
 <footer>
   <h3 style="color:#ffb627;margin-bottom:10px;">Get In Touch</h3>
   <p>X: <a href="https://x.com/Sol_auris" target="_blank">@Sol_auris</a> | Email: <a href="mailto:alphabenjamin206@gmail.com">alphabenjamin206@gmail.com</a> | WhatsApp: <a href="https://wa.me/2349161488011" target="_blank">+234 916 1488 011</a></p>
   <p style="margin-top:15px;color:#888;">© 2025 The Alpha Space. Leveling the playing field.</p>
 </footer>
-</body></html>`;
 
-files['auth.html'] = `<!DOCTYPE html><html><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sign In — The Alpha Space</title>
-<link rel="stylesheet" href="css/style.css">
-</head><body>
-<nav><div class="logo"><a href="index.html">⚡ The Alpha Space</a></div></nav>
-
-<div class="form-card" id="signinBox">
-  <h2>Welcome Back</h2>
-  <input type="email" id="loginEmail" class="input" placeholder="Email">
-  <input type="password" id="loginPass" class="input" placeholder="Password">
-  <button class="btn" style="width:100%" onclick="doLogin()">Sign In</button>
-  <p style="text-align:center;margin-top:15px;">No account? <a href="#" onclick="toggleForms()">Sign Up</a></p>
-</div>
-
-<div class="form-card" id="signupBox" style="display:none;">
-  <h2>Join The Alpha Space</h2>
-  <input type="text" id="suUsername" class="input" placeholder="Username (unique)">
-  <input type="text" id="suFullname" class="input" placeholder="Full name">
-  <input type="email" id="suEmail" class="input" placeholder="Email">
-  <input type="password" id="suPass" class="input" placeholder="Password (min 6 chars)">
-  <select id="suRole" class="input">
-    <option value="learner">I'm a Learner</option>
-    <option value="mentor">I'm a Coach / Mentor</option>
-    <option value="investor">I'm a Collaborator / Investor</option>
-  </select>
-  <button class="btn" style="width:100%" onclick="doSignup()">Create Account</button>
-  <p style="text-align:center;margin-top:15px;">Have an account? <a href="#" onclick="toggleForms()">Sign In</a></p>
-</div>
-
-<p id="msg" style="text-align:center;color:#ffb627;"></p>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/supabase.js"></script>
 <script>
-function toggleForms(){
-  const a=document.getElementById('signinBox'), b=document.getElementById('signupBox');
-  a.style.display = a.style.display==='none' ? 'block' : 'none';
-  b.style.display = b.style.display==='none' ? 'block' : 'none';
+// ============ SUPABASE SETUP ============
+const SUPABASE_URL = 'https://qafiirpzzfcqfjvlpxkr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZmlpcnB6emZjcWZqdmxweGtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDAzODMsImV4cCI6MjA5MzExNjM4M30.r4JH5ymeMTnAHA0jvyheGe6veZA9MBOk7WYG1hy8wZA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let me = null, target = null, partner = null;
+
+// ============ ROUTING ============
+async function go(page, param) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  window.scrollTo(0,0);
+  const protectedPages = ['dashboard','profile','forum','messages'];
+  if (protectedPages.includes(page) && !me) { go('auth'); return; }
+  if (page === 'dashboard') { loadNotifications(); loadFeed(); }
+  if (page === 'profile') loadProfile(param);
+  if (page === 'skills') loadCourses();
+  if (page === 'forum') loadForum();
+  if (page === 'messages') { loadConvos(); if(param){ document.getElementById('toUser').value=param; openChat(); } }
 }
-async function doSignup(){
-  const username=suUsername.value.trim().toLowerCase();
-  const full=suFullname.value.trim();
-  const email=suEmail.value.trim();
-  const pass=suPass.value;
-  const role=suRole.value;
-  if(!username||!email||!pass) return msg.textContent='Fill all fields';
-  const { data, error } = await supabaseClient.auth.signUp({ email, password: pass });
-  if(error) return msg.textContent=error.message;
-  if(data.user){
-    const { error: pErr } = await supabaseClient.from('profiles').insert({
-      id: data.user.id, username, full_name: full, role
-    });
-    if(pErr) return msg.textContent='Username may be taken: '+pErr.message;
-    msg.textContent='Account created! Check email if confirmation required, then sign in.';
-    setTimeout(()=>toggleForms(),1500);
+
+async function refreshNav() {
+  const { data: { user } } = await sb.auth.getUser();
+  const navAuth = document.getElementById('navAuth');
+  if (user) {
+    const { data } = await sb.from('profiles').select('*').eq('id',user.id).single();
+    me = data;
+    navAuth.innerHTML = `<a onclick="go('dashboard')">Home</a> &nbsp; <a onclick="go('messages')">Messages</a> &nbsp; <a onclick="go('profile')">Profile</a> &nbsp; <a onclick="logout()">Logout</a>`;
+  } else {
+    me = null;
+    navAuth.innerHTML = `<a class="btn" onclick="go('auth')">Sign In</a>`;
   }
 }
-async function doLogin(){
-  const { error } = await supabaseClient.auth.signInWithPassword({ email: loginEmail.value, password: loginPass.value });
-  if(error) return msg.textContent=error.message;
-  window.location.href='dashboard.html';
-}
-</script></body></html>`;
 
-files['dashboard.html'] = `<!DOCTYPE html><html><head>
-<meta charset="UTF-8"><meta name="v
+async function logout() { await sb.auth.signOut(); me = null; await refreshNav(); go('home'); }
+
+// ============ AUTH ============
+function toggleForms() {
+  const a = document.getElementById('signinBox'), b = document.getElementById('signupBox');
+  a.style.display = a.style.display === 'none' ? 'block' : 'none';
+  b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+async function doSignup() {
+  const username = suUsername.value.trim().toLowerCase();
+  const full = suFullname.value.trim();
+  const email = suEmail.value.trim();
+  const pass = suPass.value;
+  const role = suRole.value;
+  if (!username || !email || !pass) return authMsg.textContent = 'Fill all fields';
+  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  if (error) return authMsg.textContent = error.message;
+  if (data.user) {
+    const { error: pErr } = await sb.from('profiles').insert({ id: data.user.id, username, full_name: full, role });
+    if (pErr) return authMsg.textContent = 'Username may be taken: ' + pErr.message;
+    authMsg.textContent = 'Account created! Signing you in...';
+    setTimeout(async () => { await refreshNav(); go('dashboard'); }, 1200);
+  }
+}
+async function doLogin() {
+  const { error } = await sb.auth.signInWithPassword({ email: loginEmail.value, password: loginPass.value });
+  if (error) return authMsg.textContent = error.message;
+  await refreshNav();
+  go('dashboard');
+}
+
+// ============ DASHBOARD ============
+async function searchUsers() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) return;
+  const { data } = await sb.from('profiles').select('*').ilike('username', `%${q}%`).limit(20);
+  document.getElementById('searchResults').innerHTML = (data||[]).map(u => `
+    <div class="card">
+      <h4>@${u.username} <span class="tag">${u.role}</span></h4>
+      <p>${u.full_name||''}</p>
+      <p style="color:#aaa;font-size:.9rem">${u.bio||''}</p>
+      <a class="btn btn-outline" onclick="go('profile','${u.username}')">View Profile</a>
+    </div>`).join('') || '<p>No users found.</p>';
+}
+async function createPost() {
+  const c = document.getElementById('postContent').value.trim();
+  if (!c) return;
+  await sb.from('posts').insert({ author: me.id, content: c });
+  const { data: followers } = await sb.from('follows').select('follower').eq('following', me.id);
+  if (followers && followers.length) {
+    const notes = followers.map(f => ({ user_id: f.follower, actor: me.id, type:'new_post', message:`@${me.username} shared a new post` }));
+    await sb.from('notifications').insert(notes);
+  }
+  document.getElementById('postContent').value = '';
+  loadFeed();
+}
+async function loadFeed() {
+  const { data: posts } = await sb.from('posts').select('*, profiles!posts_author_fkey(username,role,full_name)').order('created_at',{ascending:false}).limit(30);
+  const feed = document.getElementById('feed');
+  if (!posts || !posts.length) { feed.innerHTML = '<p>No posts yet.</p>'; return; }
+  feed.innerHTML = '';
+  for (const p of posts) {
+    const { count: likeCount } = await sb.from('likes').select('*',{count:'exact',head:true}).eq('post_id', p.id);
+    const { data: liked } = await sb.from('likes').select('id').eq('post_id', p.id).eq('user_id', me.id).maybeSingle();
+    const { data: comments } = await sb.from('comments').select('*, profiles!comments_author_fkey(username)').eq('post_id', p.id).order('created_at');
+    feed.innerHTML += `
+      <div class="card">
+        <h4><a onclick="go('profile','${p.profiles.username}')">@${p.profiles.username}</a> <span class="tag">${p.profiles
