@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Alpha Space — Level the Playing Field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a26;
+  --border: #2a2a3e;
+  --accent: #7c5cfc;
+  --accent2: #fc5c7d;
+  --accent3: #5cfcb8;
+  --text: #e8e8f0;
+  --text2: #9090b0;
+  --text3: #5a5a78;
+  --card: #16162280;
+  --glow: rgba(124,92,252,0.15);
+  --radius: 16px;
+  --radius-sm: 8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* LAYOUT */
+#app{display:flex;min-height:100vh}
+#sidebar{
+  width:260px;min-width:260px;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;height:100vh;
+  z-index:100;transition:transform .3s;overflow-y:auto;
+}
+#main{margin-left:260px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+#topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:14px 28px;display:flex;align-items:center;gap:16px;
+}
+#content{flex:1;padding:28px;max-width:1100px;width:100%;margin:0 auto}
+
+/* LOGO */
+.logo{
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-text{
+  font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
+  background:linear-gradient(135deg,#7c5cfc,#fc5c7d);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1.1;
+}
+.logo-sub{font-size:11px;color:var(--text3);letter-spacing:.5px;margin-top:2px}
+
+/* NAV */
+.nav-section{padding:8px 12px;margin-top:4px}
+.nav-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;padding:8px 8px 6px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--radius-sm);
+  color:var(--text2);font-size:14px;font-weight:400;
+  cursor:pointer;transition:all .2s;border:none;background:none;width:100%;text-align:left;
+  position:relative;
+}
+.nav-item:hover{color:var(--text);background:var(--surface2)}
+.nav-item.active{color:#fff;background:linear-gradient(135deg,rgba(124,92,252,.2),rgba(252,92,125,.1));font-weight:500}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:60%;background:linear-gradient(180deg,var(--accent),var(--accent2));
+  border-radius:2px;
+}
+.nav-icon{font-size:18px;width:22px;text-align:center}
+.nav-badge{
+  margin-left:auto;background:var(--accent2);color:#fff;
+  font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;
+  min-width:18px;text-align:center;
+}
+
+/* SIDEBAR BOTTOM */
+.sidebar-bottom{margin-top:auto;padding:16px 12px;border-top:1px solid var(--border)}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--radius-sm);cursor:pointer}
+.sidebar-user:hover{background:var(--surface2)}
+.sidebar-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;overflow:hidden}
+.sidebar-avatar img{width:100%;height:100%;object-fit:cover}
+.sidebar-user-info{flex:1;min-width:0}
+.sidebar-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-role{font-size:11px;color:var(--text3);text-transform:capitalize}
+
+/* TOPBAR */
+.search-wrap{flex:1;max-width:420px;position:relative}
+.search-wrap input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:24px;padding:9px 16px 9px 40px;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;
+  outline:none;transition:border-color .2s;
+}
+.search-wrap input:focus{border-color:var(--accent)}
+.search-wrap input::placeholder{color:var(--text3)}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none}
+.search-results{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;z-index:200;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.search-result-item{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;
+  cursor:pointer;transition:background .15s;border-bottom:1px solid var(--border);
+}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:hover{background:var(--surface2)}
+
+.topbar-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+.icon-btn{
+  width:38px;height:38px;border-radius:50%;background:var(--surface2);
+  border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:18px;color:var(--text2);transition:all .2s;position:relative;
+}
+.icon-btn:hover{color:var(--text);border-color:var(--accent)}
+.notif-dot{
+  position:absolute;top:4px;right:4px;width:8px;height:8px;
+  background:var(--accent2);border-radius:50%;border:2px solid var(--bg);
+}
+
+/* MOBILE MENU */
+.menu-btn{display:none;width:38px;height:38px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);cursor:pointer;align-items:center;justify-content:center;font-size:20px;color:var(--text)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+
+/* BUTTONS */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border-radius:24px;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:500;cursor:pointer;border:none;
+  transition:all .2s;text-decoration:none;
+}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,92,252,.35)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--accent);color:var(--text)}
+.btn-sm{padding:7px 14px;font-size:13px}
+.btn-ghost{background:transparent;color:var(--text2);padding:8px 12px}
+.btn-ghost:hover{color:var(--text);background:var(--surface2)}
+.btn-danger{background:rgba(252,92,125,.15);color:var(--accent2);border:1px solid rgba(252,92,125,.3)}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px}
+.card-sm{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.glass{background:rgba(22,22,34,.6);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius)}
+
+/* HERO SECTION */
+.hero{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:48px 40px;margin-bottom:28px;position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-50%;right:-10%;
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(124,92,252,.12) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero::after{
+  content:'';position:absolute;bottom:-30%;left:20%;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(252,92,125,.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(124,92,252,.15);border:1px solid rgba(124,92,252,.3);
+  color:var(--accent);font-size:12px;font-weight:600;
+  padding:4px 12px;border-radius:20px;margin-bottom:20px;letter-spacing:.5px;
+}
+.hero h1{
+  font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,48px);font-weight:800;
+  line-height:1.1;margin-bottom:16px;
+}
+.hero h1 span{
+  background:linear-gradient(135deg,#7c5cfc,#fc5c7d,#5cfcb8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero p{font-size:16px;color:var(--text2);max-width:560px;line-height:1.7;margin-bottom:28px}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column}
+.stat-num{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;color:var(--text)}
+.stat-label{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* GRID LAYOUTS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.grid-auto{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+
+/* SECTION HEADERS */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+.section-sub{font-size:14px;color:var(--text3);margin-top:2px}
+
+/* COURSE CARDS */
+.course-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;cursor:pointer;
+  transition:all .25s;display:flex;flex-direction:column;
+}
+.course-card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 16px 40px rgba(124,92,252,.12)}
+.course-thumb{
+  height:140px;display:flex;align-items:center;justify-content:center;
+  font-size:48px;position:relative;overflow:hidden;
+}
+.course-body{padding:16px;flex:1;display:flex;flex-direction:column}
+.course-platform{
+  font-size:11px;font-weight:600;letter-spacing:.5px;
+  text-transform:uppercase;margin-bottom:8px;
+}
+.course-title{font-size:14px;font-weight:600;margin-bottom:8px;line-height:1.4}
+.course-meta{display:flex;align-items:center;gap:8px;margin-top:auto;flex-wrap:wrap}
+.badge{
+  font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;
+  background:rgba(124,92,252,.15);color:var(--accent);border:1px solid rgba(124,92,252,.2);
+}
+.badge-green{background:rgba(92,252,184,.1);color:var(--accent3);border-color:rgba(92,252,184,.2)}
+.badge-pink{background:rgba(252,92,125,.1);color:var(--accent2);border-color:rgba(252,92,125,.2)}
+.badge-coming{background:rgba(255,200,0,.1);color:#ffc800;border-color:rgba(255,200,0,.2)}
+
+/* POSTS/FORUM */
+.post-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;transition:border-color .2s}
+.post-card:hover{border-color:var(--border)}
+.post-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.post-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;overflow:hidden}
+.post-avatar img{width:100%;height:100%;object-fit:cover}
+.post-meta{flex:1}
+.post-author{font-size:14px;font-weight:600}
+.post-time{font-size:12px;color:var(--text3);margin-top:1px}
+.post-content{font-size:15px;line-height:1.7;color:var(--text2);margin-bottom:16px}
+.post-actions{display:flex;gap:4px}
+.post-action-btn{
+  display:flex;align-items:center;gap:6px;padding:7px 14px;
+  border-radius:20px;background:transparent;border:none;
+  color:var(--text3);font-size:13px;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;
+}
+.post-action-btn:hover{background:var(--surface2);color:var(--text)}
+.post-action-btn.liked{color:var(--accent2)}
+
+/* POST COMPOSE */
+.compose{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px}
+.compose-input{display:flex;gap:12px;align-items:flex-start}
+.compose textarea{
+  flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:14px;resize:none;outline:none;
+  transition:border-color .2s;min-height:80px;
+}
+.compose textarea:focus{border-color:var(--accent)}
+.compose-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+
+/* COMMENTS */
+.comments-section{padding-top:14px;border-top:1px solid var(--border)}
+.comment{display:flex;gap:10px;margin-bottom:14px}
+.comment-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;overflow:hidden}
+.comment-avatar img{width:100%;height:100%;object-fit:cover}
+.comment-body{flex:1;background:var(--surface2);border-radius:var(--radius-sm);padding:10px 14px}
+.comment-author{font-size:13px;font-weight:600;margin-bottom:4px}
+.comment-text{font-size:13px;color:var(--text2);line-height:1.5}
+.comment-actions{display:flex;gap:8px;margin-top:6px}
+.comment-action{background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:2px 0}
+.comment-action:hover{color:var(--text)}
+.reply-box{margin-left:42px;margin-top:8px}
+
+/* PROFILE */
+.profile-header{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:20px;
+}
+.profile-cover{height:160px;background:linear-gradient(135deg,#1a0a3e,#3e0a20,#0a3e20);position:relative}
+.profile-info{padding:16px 24px 24px;display:flex;gap:20px;align-items:flex-start}
+.profile-pic{
+  width:90px;height:90px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:4px solid var(--surface);margin-top:-45px;
+  display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;
+  flex-shrink:0;overflow:hidden;
+}
+.profile-pic img{width:100%;height:100%;object-fit:cover}
+.profile-details{flex:1}
+.profile-name{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px}
+.profile-username{font-size:14px;color:var(--text3);margin-bottom:8px}
+.profile-bio{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:12px}
+.profile-stats{display:flex;gap:20px}
+.p-stat{text-align:center}
+.p-stat-num{font-family:'Syne',sans-serif;font-size:18px;font-weight:700}
+.p-stat-label{font-size:12px;color:var(--text3)}
+.profile-actions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;align-items:flex-start;margin-top:8px}
+
+/* NOTIFICATIONS */
+.notif-item{
+  display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .15s;
+}
+.notif-item:hover{background:var(--surface2)}
+.notif-item.unread{background:rgba(124,92,252,.04)}
+.notif-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.notif-text{flex:1;font-size:13px;color:var(--text2);line-height:1.5}
+.notif-time{font-size:11px;color:var(--text3);margin-top:4px}
+
+/* MESSAGES */
+.messages-layout{display:flex;height:calc(100vh - 130px);gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.conv-list{width:280px;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.conv-item{display:flex;gap:10px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
+.conv-item:hover,.conv-item.active{background:var(--surface2)}
+.conv-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;overflow:hidden}
+.conv-avatar img{width:100%;height:100%;object-fit:cover}
+.conv-info{flex:1;min-width:0}
+.conv-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-preview{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.chat-area{flex:1;display:flex;flex-direction:column}
+.chat-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.msg-bubble{max-width:70%;padding:10px 14px;border-radius:16px;font-size:14px;line-height:1.5}
+.msg-mine{background:linear-gradient(135deg,var(--accent),rgba(124,92,252,.7));color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.msg-theirs{background:var(--surface2);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
+.msg-time{font-size:11px;opacity:.6;margin-top:4px}
+.chat-input{padding:16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:center}
+.chat-input input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:24px;padding:10px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none}
+.chat-input input:focus{border-color:var(--accent)}
+
+/* SCHOLARSHIP CARDS */
+.scholarship-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all .25s;cursor:pointer}
+.scholarship-card:hover{transform:translateY(-2px);border-color:var(--accent3);box-shadow:0 8px 24px rgba(92,252,184,.08)}
+.sch-host{font-size:12px;color:var(--accent3);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.sch-title{font-size:16px;font-weight:700;margin-bottom:8px;line-height:1.3}
+.sch-desc{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px}
+.sch-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.sch-deadline{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:4px}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;max-width:520px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-header{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700}
+.modal-close{width:32px;height:32px;border-radius:50%;background:var(--surface2);border:none;cursor:pointer;font-size:18px;color:var(--text2);display:flex;align-items:center;justify-content:center}
+.modal-body{padding:24px}
+
+/* FORMS */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px}
+.form-input{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 14px;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;
+  transition:border-color .2s;
+}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+textarea.form-input{resize:vertical;min-height:100px}
+select.form-input{cursor:pointer}
+.form-hint{font-size:12px;color:var(--text3);margin-top:4px}
+.form-error{font-size:12px;color:var(--accent2);margin-top:4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:24px;margin-bottom:24px}
+.tab{flex:1;padding:9px;border-radius:20px;border:none;background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all .2s;font-weight:500;text-align:center}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.role-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.role-card{
+  border:2px solid var(--border);border-radius:var(--radius-sm);padding:14px;
+  cursor:pointer;transition:all .2s;text-align:center;
+}
+.role-card:hover{border-color:var(--accent)}
+.role-card.selected{border-color:var(--accent);background:rgba(124,92,252,.08)}
+.role-card-icon{font-size:24px;margin-bottom:6px}
+.role-card-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.role-card-desc{font-size:11px;color:var(--text3)}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* EMPTY STATES */
+.empty{text-align:center;padding:60px 20px}
+.empty-icon{font-size:48px;margin-bottom:12px;opacity:.5}
+.empty-title{font-size:18px;font-weight:600;margin-bottom:8px}
+.empty-text{font-size:14px;color:var(--text3)}
+
+/* TOAST */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:10px}
+.toast{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px 18px;
+  font-size:14px;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,.3);
+  display:flex;align-items:center;gap:10px;
+  animation:slideIn .3s ease;
+}
+.toast.success{border-color:var(--accent3)}
+.toast.error{border-color:var(--accent2)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0;transform:translateX(100%)}}
+
+/* AUTH SCREENS */
+#auth-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:999;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:460px;overflow:hidden}
+.auth-header{padding:32px 32px 0;text-align:center}
+.auth-logo{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;background:linear-gradient(135deg,#7c5cfc,#fc5c7d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.auth-tagline{font-size:14px;color:var(--text3);margin-bottom:24px}
+.auth-body{padding:0 32px 32px}
+
+/* LOADING */
+.spinner{
+  width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.page-loader{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);flex-direction:column;gap:12px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  #sidebar{transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0)}
+  #main{margin-left:0}
+  .overlay{display:none}
+  .overlay.open{display:block}
+  .menu-btn{display:flex}
+  .grid-3{grid-template-columns:1fr 1fr}
+  .grid-4{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  #content{padding:16px}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .hero{padding:28px 20px}
+  .messages-layout{flex-direction:column;height:auto}
+  .conv-list{width:100%;border-right:none;border-bottom:1px solid var(--border);max-height:200px}
+  .chat-area{height:400px}
+  .role-cards{grid-template-columns:1fr 1fr}
+}
+
+/* ANIMATIONS */
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-header">
+      <div class="auth-logo">α The Alpha Space</div>
+      <p class="auth-tagline">Level the Playing Field. Access is for Everyone.</p>
+    </div>
+    <div class="auth-body">
+      <div class="tabs">
+        <button class="tab active" onclick="switchAuthTab('signin')">Sign In</button>
+        <button class="tab" onclick="switchAuthTab('signup')">Sign Up</button>
+      </div>
+
+      <!-- SIGN IN -->
+      <div id="signin-form">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="si-email" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="si-password" placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="signIn()">
+          <span id="si-btn-text">Sign In</span>
+        </button>
+        <p style="text-align:center;font-size:13px;color:var(--text3);margin-top:14px">
+          Don't have an account? <a href="#" onclick="switchAuthTab('signup')" style="color:var(--accent)">Sign Up</a>
+        </p>
+      </div>
+
+      <!-- SIGN UP -->
+      <div id="signup-form" style="display:none">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px;text-align:center">Join as:</p>
+        <div class="role-cards">
+          <div class="role-card selected" onclick="selectRole('learner',this)">
+            <div class="role-card-icon">📚</div>
+            <div class="role-card-name">Learner</div>
+            <div class="role-card-desc">Learn skills, grow</div>
+          </div>
+          <div class="role-card" onclick="selectRole('mentor',this)">
+            <div class="role-card-icon">🧠</div>
+            <div class="role-card-name">Mentor/Coach</div>
+            <div class="role-card-desc">Guide others</div>
+          </div>
+          <div class="role-card" onclick="selectRole('collaborator',this)">
+            <div class="role-card-icon">🤝</div>
+            <div class="role-card-name">Collaborator</div>
+            <div class="role-card-desc">Build together</div>
+          </div>
+          <div class="role-card" onclick="selectRole('investor',this)">
+            <div class="role-card-icon">💼</div>
+            <div class="role-card-name">Investor</div>
+            <div class="role-card-desc">Fund visions</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-input" id="su-name" placeholder="Your name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-input" id="su-username" placeholder="@username">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="su-email" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="su-password" placeholder="••••••••">
+          <div class="form-hint">At least 8 characters</div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="signUp()">
+          <span id="su-btn-text">Create Account</span>
+        </button>
+        <p style="text-align:center;font-size:13px;color:var(--text3);margin-top:14px">
+          Already have an account? <a href="#" onclick="switchAuthTab('signin')" style="color:var(--accent)">Sign In</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="logo">
+      <div class="logo-text">α The Alpha Space</div>
+      <div class="logo-sub">Level the Playing Field</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <button class="nav-item active" onclick="navigate('home')"><span class="nav-icon">🏠</span>Home</button>
+      <button class="nav-item" onclick="navigate('forum')"><span class="nav-icon">💬</span>Forum</button>
+      <button class="nav-item" onclick="navigate('messages')"><span class="nav-icon">✉️</span>Messages<span class="nav-badge" id="msg-badge" style="display:none">0</span></button>
+      <button class="nav-item" onclick="navigate('notifications')"><span class="nav-icon">🔔</span>Notifications<span class="nav-badge" id="notif-badge" style="display:none">0</span></button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Learn</div>
+      <button class="nav-item" onclick="navigate('courses')"><span class="nav-icon">📚</span>Skills & Courses</button>
+      <button class="nav-item" onclick="navigate('scholarships')"><span class="nav-icon">🎓</span>Schools & Scholarships</button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Connect</div>
+      <button class="nav-item" onclick="navigate('mentors')"><span class="nav-icon">🧠</span>Mentors & Coaches</button>
+      <button class="nav-item" onclick="navigate('investors')"><span class="nav-icon">💼</span>Investors <span class="badge badge-coming" style="font-size:10px;padding:2px 6px">Soon</span></button>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">Account</div>
+      <button class="nav-item" onclick="navigate('profile')"><span class="nav-icon">👤</span>My Profile</button>
+      <button class="nav-item" onclick="navigate('settings')"><span class="nav-icon">⚙️</span>Settings</button>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="sidebar-user" onclick="navigate('profile')">
+        <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-name" id="sidebar-name">Loading...</div>
+          <div class="sidebar-role" id="sidebar-role">learner</div>
+        </div>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px" onclick="signOut()">🚪 Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div id="main">
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" placeholder="Search users by username..." id="global-search" oninput="handleSearch(this.value)" autocomplete="off">
+        <div class="search-results" id="search-results" style="display:none"></div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="icon-btn" onclick="navigate('messages')" title="Messages">
+          ✉️<span class="notif-dot" id="msg-dot" style="display:none"></span>
+        </div>
+        <div class="icon-btn" onclick="navigate('notifications')" title="Notifications">
+          🔔<span class="notif-dot" id="notif-dot" style="display:none"></span>
+        </div>
+        <div class="icon-btn" onclick="navigate('profile')" title="Profile">
+          <div id="topbar-avatar" style="font-size:16px">👤</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE CONTENT -->
+    <div id="content"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div id="toast-container"></div>
+
+<script>
+// ============================================
+// SUPABASE INIT
+// ============================================
+const SUPABASE_URL = 'https://qafiirpzzfcqfjvlpxkr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhZmlpcnB6emZjcWZqdmxweGtyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDAzODMsImV4cCI6MjA5MzExNjM4M30.r4JH5ymeMTnAHA0jvyheGe6veZA9MBOk7WYG1hy8wZA';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================
+// APP STATE
+// ============================================
+let currentUser = null;
+let currentProfile = null;
+let currentPage = 'home';
+let selectedRole = 'learner';
+let searchTimeout = null;
+let realtimeChannels = [];
+let activeChatUser = null;
+
+// ============================================
+// INIT
+// ============================================
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadProfile();
+    showApp();
+    navigate('home');
+    setupRealtime();
+    updateUnreadCounts();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
+
+  db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      currentUser = session.user;
+      await loadProfile();
+      showApp();
+      navigate('home');
+      setupRealtime();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      currentProfile = null;
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('auth-screen').style.display = 'flex';
+    }
+  });
+}
+
+async function loadProfile() {
+  if (!currentUser) return;
+  const { data } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+  if (data) {
+    currentProfile = data;
+    updateSidebarUser();
+  }
+}
+
+function updateSidebarUser() {
+  if (!currentProfile) return;
+  const initials = (currentProfile.full_name || currentProfile.username || '?').slice(0,2).toUpperCase();
+  document.getElementById('sidebar-name').textContent = currentProfile.full_name || currentProfile.username;
+  document.getElementById('sidebar-role').textContent = currentProfile.role || 'learner';
+  const av = document.getElementById('sidebar-avatar');
+  if (currentProfile.avatar_url) {
+    av.innerHTML = `<img src="${currentProfile.avatar_url}" alt="">`;
+  } else {
+    av.textContent = initials;
+  }
+  document.getElementById('topbar-avatar').textContent = initials;
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+}
+
+// ============================================
+// AUTH
+// ============================================
+function switchAuthTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', (tab==='signin' && i===0)||(tab==='signup' && i===1));
+  });
+  document.getElementById('signin-form').style.display = tab==='signin'?'block':'none';
+  document.getElementById('signup-form').style.display = tab==='signup'?'block':'none';
+}
+
+function selectRole(role, el) {
+  selectedRole = role;
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function signIn() {
+  const email = document.getElementById('si-email').value.trim();
+  const password = document.getElementById('si-password').value;
+  if (!email || !password) { showToast('Please fill in all fields','error'); return; }
+  const btn = document.getElementById('si-btn-text');
+  btn.textContent = 'Signing in...';
+  const { error } = await db.auth.signInWithPassword({ email, password });
+  btn.textContent = 'Sign In';
+  if (error) showToast(error.message, 'error');
+  else showToast('Welcome back! 🎉', 'success');
+}
+
+async function signUp() {
+  const name = document.getElementById('su-name').value.trim();
+  const username = document.getElementById('su-username').value.trim().replace('@','').toLowerCase();
+  const email = document.getElementById('su-email').value.trim();
+  const password = document.getElementById('su-password').value;
+  if (!name||!username||!email||!password) { showToast('Please fill in all fields','error'); return; }
+  if (password.length < 8) { showToast('Password must be at least 8 characters','error'); return; }
+  if (!/^[a-z0-9_]+$/.test(username)) { showToast('Username can only contain letters, numbers, underscores','error'); return; }
+
+  const { data: existing } = await db.from('profiles').select('id').eq('username',username).single();
+  if (existing) { showToast('Username already taken','error'); return; }
+
+  const btn = document.getElementById('su-btn-text');
+  btn.textContent = 'Creating account...';
+  const { error } = await db.auth.signUp({
+    email, password,
+    options: { data: { full_name: name, username, role: selectedRole } }
+  });
+  btn.textContent = 'Create Account';
+  if (error) showToast(error.message, 'error');
+  else {
+    showToast('Account created! Welcome to The Alpha Space 🚀', 'success');
+    switchAuthTab('signin');
+  }
+}
+
+async function signOut() {
+  await db.auth.signOut();
+  realtimeChannels.forEach(c => db.removeChannel(c));
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+function navigate(page, params={}) {
+  currentPage = page;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navMap = {home:0,forum:1,messages:2,notifications:3,courses:5,scholarships:6,mentors:8,investors:9,profile:11,settings:12};
+  const navItems = document.querySelectorAll('.nav-item');
+  if (navMap[page]!==undefined && navItems[navMap[page]]) navItems[navMap[page]].classList.add('active');
+  closeSidebar();
+  renderPage(page, params);
+}
+
+async function renderPage(page, params={}) {
+  const c = document.getElementById('content');
+  c.innerHTML = `<div class="page-loader"><div class="spinner"></div><span style="color:var(--text3);font-size:14px">Loading...</span></div>`;
+  switch(page) {
+    case 'home': await renderHome(); break;
+    case 'forum': await renderForum(); break;
+    case 'courses': await renderCourses(); break;
+    case 'scholarships': await renderScholarships(); break;
+    case 'mentors': await renderMentors(); break;
+    case 'investors': renderInvestors(); break;
+    case 'messages': await renderMessages(params.userId); break;
+    case 'notifications': await renderNotifications(); break;
+    case 'profile': await renderProfile(params.userId || currentUser?.id); break;
+    case 'user-profile': await renderProfile(params.userId); break;
+    case 'settings': renderSettings(); break;
+    default: renderHome();
+  }
+}
+
+// ============================================
+// HOME PAGE
+// ============================================
+async function renderHome() {
+  const [postsRes, profilesRes] = await Promise.all([
+    db.from('posts').select('*,profiles(username,full_name,avatar_url,role)').order('created_at',{ascending:false}).limit(5),
+    db.from('profiles').select('*').neq('id', currentUser.id).order('followers_count',{ascending:false}).limit(6)
+  ]);
+  const posts = postsRes.data || [];
+  const people = profilesRes.data || [];
+
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in">
+      <div class="hero">
+        <div class="hero-tag">🌍 Equal Access for All</div>
+        <h1>Your <span>Opportunity</span><br>Starts Here</h1>
+        <p>Learn in-demand digital skills, connect with mentors, discover scholarships and get matched with collaborators who believe in your vision. Access should be equal — irrespective of class, age, gender, race, or region.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px">
+          <button class="btn btn-primary" onclick="navigate('courses')">📚 Start Learning Free</button>
+          <button class="btn btn-outline" onclick="navigate('forum')">💬 Join the Forum</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><span class="stat-num">500+</span><span class="stat-label">Free Courses</span></div>
+          <div class="stat"><span class="stat-num">200+</span><span class="stat-label">Scholarships</span></div>
+          <div class="stat"><span class="stat-num">50+</span><span class="stat-label">Expert Mentors</span></div>
+          <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Possibilities</span></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:28px">
+        <div class="card" style="cursor:pointer" onclick="navigate('courses')">
+          <div style="font-size:32px;margin-bottom:12px">📚</div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px">Skills & Learning</div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:14px">Access hundreds of free courses from Coursera, Alison, edX and more. Learn at your own pace.</div>
+          <span class="badge badge-green">500+ Free Courses</span>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('scholarships')">
+          <div style="font-size:32px;margin-bottom:12px">🎓</div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px">Schools & Scholarships</div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:14px">Discover real scholarships and free online universities. Your dream education is within reach.</div>
+          <span class="badge badge-green">200+ Opportunities</span>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('mentors')">
+          <div style="font-size:32px;margin-bottom:12px">🧠</div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px">Mentors & Coaches</div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:14px">Connect with experienced professionals who've walked the path. Get guidance, not just information.</div>
+          <span class="badge">50+ Mentors</span>
+        </div>
+        <div class="card" style="cursor:pointer" onclick="navigate('investors')">
+          <div style="font-size:32px;margin-bottom:12px">💼</div>
+          <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px">Investors & Collaborators</div>
+          <div style="font-size:14px;color:var(--text2);margin-bottom:14px">Get matched with investors and collaborators who believe in your vision and are ready to help you scale.</div>
+          <span class="badge badge-coming">Coming Soon</span>
+        </div>
+      </div>
+
+      <div class="section-header" style="margin-bottom:16px">
+        <div><div class="section-title">👥 People to Connect With</div><div class="section-sub">Discover mentors, collaborators and learners</div></div>
+        <button class="btn btn-outline btn-sm" onclick="navigate('mentors')">See All</button>
+      </div>
+      <div class="grid-3" style="margin-bottom:28px">
+        ${people.map(p => userCard(p)).join('')}
+      </div>
+
+      <div class="section-header" style="margin-bottom:16px">
+        <div><div class="section-title">📢 Latest from the Forum</div></div>
+        <button class="btn btn-outline btn-sm" onclick="navigate('forum')">See All</button>
+      </div>
+      ${posts.length ? posts.map(p => postCard(p, true)).join('') : '<div class="empty"><div class="empty-icon">📢</div><div class="empty-title">No posts yet</div><div class="empty-text">Be the first to share something!</div></div>'}
+    </div>
+  `;
+}
+
+function userCard(p) {
+  const initials = (p.full_name || p.username || '?').slice(0,2).toUpperCase();
+  const roleColors = {mentor:'var(--accent)',coach:'var(--accent)',learner:'var(--accent3)',collaborator:'#ffc800',investor:'var(--accent2)'};
+  return `
+    <div class="card" style="text-align:center;cursor:pointer" onclick="navigate('user-profile',{userId:'${p.id}'})">
+      <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 12px;overflow:hidden">
+        ${p.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover">` : initials}
+      </div>
+      <div style="font-weight:600;font-size:15px;margin-bottom:2px">${p.full_name||p.username}</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">@${p.username}</div>
+      <span class="badge" style="background:rgba(124,92,252,.1);color:${roleColors[p.role]||'var(--accent)'};margin-bottom:12px">${p.role||'learner'}</span>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">${p.followers_count||0} followers</div>
+      <button class="btn btn-outline btn-sm" style="width:100%" onclick="event.stopPropagation();handleFollow('${p.id}',this)">+ Follow</button>
+    </div>
+  `;
+}
+
+// ============================================
+// FORUM
+// ============================================
+async function renderForum() {
+  const { data: posts } = await db.from('posts')
+    .select('*,profiles(id,username,full_name,avatar_url,role)')
+    .order('created_at',{ascending:false}).limit(30);
+
+  const categories = ['general','tech','business','career','learning','networking'];
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in">
+      <div class="section-header" style="margin-bottom:20px">
+        <div><div class="section-title">💬 Community Forum</div><div class="section-sub">Connect and network with people across the globe</div></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+        ${categories.map(c=>`<button class="btn btn-outline btn-sm" onclick="filterPosts('${c}',this)" data-cat="${c}" style="text-transform:capitalize">${c}</button>`).join('')}
+        <button class="btn btn-outline btn-sm" onclick="filterPosts('all',this)" style="margin-left:auto">All Posts</button>
+      </div>
+      <div class="compose">
+        <div class="compose-input">
+          <div class="post-avatar" style="width:42px;height:42px;flex-shrink:0">${getAvatarHtml(currentProfile, 42)}</div>
+          <textarea id="new-post-text" placeholder="Share something with the community..."></textarea>
+        </div>
+        <div class="compose-footer">
+          <select id="post-category" class="form-input" style="width:auto;padding:7px 12px">
+            ${categories.map(c=>`<option value="${c}" style="text-transform:capitalize">${c}</option>`).join('')}
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="createPost()">Post</button>
+        </div>
+      </div>
+      <div id="posts-container">
+        ${(posts||[]).map(p=>postCard(p, false)).join('')}
+        ${!posts?.length ? '<div class="empty"><div class="empty-icon">💬</div><div class="empty-title">No posts yet</div><div class="empty-text">Start the conversation!</div></div>' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function postCard(p, preview=false) {
+  const pr = p.profiles || {};
+  const initials = (pr.full_name||pr.username||'?').slice(0,2).toUpperCase();
+  const timeAgo = getTimeAgo(p.created_at);
+  return `
+    <div class="post-card" id="post-${p.id}">
+      <div class="post-header">
+        <div class="post-avatar" onclick="navigate('user-profile',{userId:'${pr.id}'})" style="cursor:pointer">
+          ${pr.avatar_url ? `<img src="${pr.avatar_url}">` : initials}
+        </div>
+        <div class="post-meta">
+          <div class="post-author" style="cursor:pointer" onclick="navigate('user-profile',{userId:'${pr.id}'})">${pr.full_name||pr.username||'User'}</div>
+          <div class="post-time">@${pr.username||'user'} · ${timeAgo} ${p.category?`· <span class="badge" style="font-size:10px;padding:2px 8px">${p.category}</span>`:''}</div>
+        </div>
+        ${pr.id===currentUser?.id?`<button class="btn btn-ghost btn-sm" onclick="deletePost('${p.id}')">🗑️</button>`:''}
+      </div>
+      <div class="post-content">${escHtml(p.content)}</div>
+      <div class="post-actions">
+        <button class="post-action-btn" onclick="likePost('${p.id}',this)">❤️ <span class="like-count">${p.likes_count||0}</span></button>
+        <button class="post-action-btn" onclick="toggleComments('${p.id}')">💬 <span class="comment-count">${p.comments_count||0}</span></button>
+        <button class="post-action-btn" onclick="sharePost('${p.id}')">📤 Share</button>
+      </div>
+      <div id="comments-${p.id}" style="display:none">
+        <div class="comments-section" id="comments-list-${p.id}">
+          <div class="page-loader" style="padding:20px"><div class="spinner"></div></div>
+        </div>
+        <div style="display:flex;gap:10px;padding-top:12px">
+          <div style="width:32px;height:32px">${getAvatarHtml(currentProfile,32)}</div>
+          <input type="text" class="form-input" placeholder="Write a comment..." id="comment-input-${p.id}" style="flex:1" onkeydown="if(event.key==='Enter')addComment('${p.id}')">
+          <button class="btn btn-primary btn-sm" onclick="addComment('${p.id}')">Post</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function createPost() {
+  const text = document.getElementById('new-post-text').value.trim();
+  const category = document.getElementById('post-category').value;
+  if (!text) { showToast('Write something first!','error'); return; }
+  const { data, error } = await db.from('posts').insert({ user_id: currentUser.id, content: text, category }).select('*,profiles(id,username,full_name,avatar_url,role)').single();
+  if (error) { showToast('Failed to post','error'); return; }
+  document.getElementById('new-post-text').value = '';
+  const container = document.getElementById('posts-container');
+  container.insertAdjacentHTML('afterbegin', postCard(data, false));
+  showToast('Posted! ✅','success');
+}
+
+async function deletePost(postId) {
+  if (!confirm('Delete this post?')) return;
+  await db.from('posts').delete().eq('id',postId).eq('user_id',currentUser.id);
+  document.getElementById(`post-${postId}`)?.remove();
+  showToast('Post deleted');
+}
+
+async function likePost(postId, btn) {
+  const { data: existing } = await db.from('likes').select('id').eq('user_id',currentUser.id).eq('post_id',postId).single();
+  if (existing) {
+    await db.from('likes').delete().eq('id',existing.id);
+    btn.classList.remove('liked');
+    const span = btn.querySelector('.like-count');
+    span.textContent = Math.max(0, parseInt(span.textContent)-1);
+  } else {
+    await db.from('likes').insert({user_id:currentUser.id, post_id:postId});
+    btn.classList.add('liked');
+    const span = btn.querySelector('.like-count');
+    span.textContent = parseInt(span.textContent)+1;
+    // notify post owner
+    const {data:post} = await db.from('posts').select('user_id').eq('id',postId).single();
+    if (post && post.user_id !== currentUser.id) {
+      await db.from('notifications').insert({user_id:post.user_id,actor_id:currentUser.id,type:'like',post_id:postId,message:`${currentProfile?.username} liked your post`});
+    }
+  }
+}
+
+async function toggleComments(postId) {
+  const el = document.getElementById(`comments-${postId}`);
+  if (el.style.display==='none') {
+    el.style.display='block';
+    await loadComments(postId);
+  } else {
+    el.style.display='none';
+  }
+}
+
+async function loadComments(postId) {
+  const { data: comments } = await db.from('comments')
+    .select('*,profiles(id,username,full_name,avatar_url)')
+    .eq('post_id',postId).is('parent_id',null)
+    .order('created_at',{ascending:true});
+  const el = document.getElementById(`comments-list-${postId}`);
+  el.innerHTML = (comments||[]).map(c=>commentHtml(c,postId)).join('') || '<p style="color:var(--text3);font-size:13px;padding:12px 0">No comments yet. Be first!</p>';
+}
+
+function commentHtml(c, postId) {
+  const pr = c.profiles||{};
+  return `
+    <div class="comment" id="comment-${c.id}">
+      <div class="comment-avatar" onclick="navigate('user-profile',{userId:'${pr.id}'})" style="cursor:pointer">
+        ${pr.avatar_url?`<img src="${pr.avatar_url}">`:(pr.full_name||pr.username||'?').slice(0,2).toUpperCase()}
+      </div>
+      <div style="flex:1">
+        <div class="comment-body">
+          <div class="comment-author">${pr.full_name||pr.username||'User'}</div>
+          <div class="comment-text">${escHtml(c.content)}</div>
+        </div>
+        <div class="comment-actions">
+          <button class="comment-action" onclick="likeComment('${c.id}',this)">❤️ ${c.likes_count||0}</button>
+          <button class="comment-action" onclick="toggleReply('${c.id}','${postId}','${pr.username||''}')">Reply</button>
+          ${pr.id===currentUser?.id?`<button class="comment-action" onclick="deleteComment('${c.id}','${postId}')">Delete</button>`:''}
+        </div>
+        <div id="reply-${c.id}" style="display:none" class="reply-box">
+          <div style="display:flex;gap:8px">
+            <input type="text" class="form-input" id="reply-input-${c.id}" placeholder="Reply to @${pr.username||'user'}..." style="flex:1;padding:8px 12px">
+            <button class="btn btn-primary btn-sm" onclick="addReply('${c.id}','${postId}')">Reply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function addComment(postId) {
+  const input = document.getElementById(`comment-input-${postId}`);
+  const text = input.value.trim();
+  if (!text) return;
+  const { data, error } = await db.from('comments').insert({post_id:postId,user_id:currentUser.id,content:text}).select('*,profiles(id,username,full_name,avatar_url)').single();
+  if (error) { showToast('Failed to comment','error'); return; }
+  input.value = '';
+  const el = document.getElementById(`comments-list-${postId}`);
+  el.insertAdjacentHTML('beforeend', commentHtml(data, postId));
+  const span = document.querySelector(`#post-${postId} .comment-count`);
+  if (span) span.textContent = parseInt(span.textContent)+1;
+  // notify
+  const {data:post} = await db.from('posts').select('user_id').eq('id',postId).single();
+  if (post && post.user_id !== currentUser.id) {
+    await db.from('notifications').insert({user_id:post.user_id,actor_id:currentUser.id,type:'comment',post_id:postId,message:`${currentProfile?.username} commented on your post`});
+  }
+}
+
+async function addReply(parentId, postId) {
+  const input = document.getElementById(`reply-input-${parentId}`);
+  const text = input.value.trim();
+  if (!text) return;
+  const { data } = await db.from('comments').insert({post_id:postId,user_id:currentUser.id,parent_id:parentId,content:text}).select('*,profiles(id,username,full_name,avatar_url)').single();
+  if (data) {
+    input.value = '';
+    document.getElementById(`reply-${parentId}`).style.display='none';
+    const replyDiv = document.getElementById(`comment-${parentId}`);
+    replyDiv.insertAdjacentHTML('afterend', `<div style="margin-left:42px">${commentHtml(data,postId)}</div>`);
+    showToast('Reply posted ✅');
+    // notify
+    const {data:parent} = await db.from('comments').select('user_id').eq('id',parentId).single();
+    if (parent && parent.user_id !== currentUser.id) {
+      await db.from('notifications').insert({user_id:parent.user_id,actor_id:currentUser.id,type:'reply',post_id:postId,comment_id:parentId,message:`${currentProfile?.username} replied to your comment`});
+    }
+  }
+}
+
+function toggleReply(commentId, postId, username) {
+  const el = document.getElementById(`reply-${commentId}`);
+  el.style.display = el.style.display==='none'?'block':'none';
+  if (el.style.display==='block') document.getElementById(`reply-input-${commentId}`)?.focus();
+}
+
+async function likeComment(commentId, btn) {
+  const { data: existing } = await db.from('likes').select('id').eq('user_id',currentUser.id).eq('comment_id',commentId).single();
+  if (existing) {
+    await db.from('likes').delete().eq('id',existing.id);
+    btn.textContent = `❤️ ${Math.max(0,parseInt(btn.textContent.split(' ')[1]||0)-1)}`;
+  } else {
+    await db.from('likes').insert({user_id:currentUser.id,comment_id:commentId});
+    btn.textContent = `❤️ ${parseInt(btn.textContent.split(' ')[1]||0)+1}`;
+  }
+}
+
+async function deleteComment(commentId, postId) {
+  await db.from('comments').delete().eq('id',commentId).eq('user_id',currentUser.id);
+  document.getElementById(`comment-${commentId}`)?.remove();
+}
+
+function filterPosts(category, btn) {
+  // Reload forum with filter
+  renderForum();
+}
+
+function sharePost(postId) {
+  navigator.clipboard?.writeText(window.location.href + '#post-' + postId);
+  showToast('Link copied!');
+}
+
+// ============================================
+// COURSES
+// ============================================
+const COURSES = [
+  {title:'Python for Everybody',platform:'Coursera',category:'Programming',icon:'🐍',color:'#1a6b4a',free:true,url:'https://www.coursera.org/specializations/python',desc:'Learn Python from scratch with hands-on projects. No experience needed.',duration:'7 months'},
+  {title:'Full-Stack Web Development',platform:'Coursera',category:'Web Dev',icon:'💻',color:'#0a4a8a',free:true,url:'https://www.coursera.org/professional-certificates/meta-full-stack-developer',desc:'Build modern web applications with React, Node.js and databases.',duration:'9 months'},
+  {title:'Digital Marketing',platform:'Alison',category:'Marketing',icon:'📣',color:'#6b1a4a',free:true,url:'https://alison.com/courses/digital-marketing',desc:'Master SEO, social media marketing, email marketing and analytics.',duration:'4-6 hours'},
+  {title:'Data Science & Machine Learning',platform:'Coursera',category:'Data Science',icon:'🤖',color:'#4a1a6b',free:true,url:'https://www.coursera.org/professional-certificates/ibm-data-science',desc:'Learn machine learning, data analysis and AI fundamentals.',duration:'10 months'},
+  {title:'Graphic Design Fundamentals',platform:'Alison',category:'Design',icon:'🎨',color:'#8a3a0a',free:true,url:'https://alison.com/courses/introduction-to-graphic-design',desc:'Master design principles, typography and visual communication.',duration:'3-4 hours'},
+  {title:'Introduction to Cloud Computing',platform:'edX',category:'Cloud',icon:'☁️',color:'#0a6b6b',free:true,url:'https://www.edx.org/learn/cloud-computing/ibm-introduction-to-cloud-computing',desc:'Understand cloud concepts, infrastructure and deployment models.',duration:'5 weeks'},
+  {title:'Cybersecurity Fundamentals',platform:'Alison',category:'Security',icon:'🔐',color:'#4a4a0a',free:true,url:'https://alison.com/course/cybersecurity-fundamentals',desc:'Learn ethical hacking, network security and threat management.',duration:'5-6 hours'},
+  {title:'UI/UX Design',platform:'Coursera',category:'Design',icon:'✨',color:'#6b0a4a',free:true,url:'https://www.coursera.org/professional-certificates/google-ux-design',desc:'Design user-friendly interfaces and conduct UX research.',duration:'6 months'},
+  {title:'English Communication Skills',platform:'Alison',category:'Language',icon:'🗣️',color:'#0a4a0a',free:true,url:'https://alison.com/courses/english-communication',desc:'Improve professional English writing, speaking and comprehension.',duration:'3-4 hours'},
+  {title:'Project Management',platform:'Coursera',category:'Business',icon:'📊',color:'#3a0a6b',free:true,url:'https://www.coursera.org/professional-certificates/google-project-management',desc:'Master Agile, Scrum and project management methodologies.',duration:'6 months'},
+  {title:'Entrepreneurship & Business',platform:'edX',category:'Business',icon:'🚀',color:'#6b3a0a',free:true,url:'https://www.edx.org/learn/entrepreneurship',desc:'Learn how to start, build and scale your own business.',duration:'8 weeks'},
+  {title:'Financial Literacy',platform:'Alison',category:'Finance',icon:'💰',color:'#0a6b3a',free:true,url:'https://alison.com/courses/financial-literacy',desc:'Understand personal finance, budgeting, investing and wealth building.',duration:'2-3 hours'},
+  {title:'Video Editing & Production',platform:'Alison',category:'Creative',icon:'🎬',color:'#6b0a0a',free:true,url:'https://alison.com/courses/video-editing',desc:'Create professional videos using popular editing software.',duration:'4-5 hours'},
+  {title:'Social Media Management',platform:'Coursera',category:'Marketing',icon:'📱',color:'#0a3a6b',free:true,url:'https://www.coursera.org/learn/social-media-management',desc:'Manage brand presence across all social media platforms.',duration:'4 weeks'},
+  {title:'Introduction to AI',platform:'edX',category:'AI/ML',icon:'🧠',color:'#4a0a6b',free:true,url:'https://www.edx.org/learn/artificial-intelligence',desc:'Understand artificial intelligence concepts and real-world applications.',duration:'6 weeks'},
+  {title:'Mobile App Development',platform:'Coursera',category:'Programming',icon:'📲',color:'#0a6b1a',free:true,url:'https://www.coursera.org/specializations/android-app-development',desc:'Build Android and iOS apps from scratch.',duration:'8 months'},
+];
+
+async function renderCourses() {
+  const { data: recs } = await db.from('course_recommendations')
+    .select('*,profiles(username)').order('votes_count',{ascending:false}).limit(10);
+
+  const categories = ['All',...new Set(COURSES.map(c=>c.category))];
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in">
+      <div class="section-header" style="margin-bottom:8px">
+        <div><div class="section-title">📚 Skills & Courses</div><div class="section-sub">Free courses from Coursera, Alison, edX and more</div></div>
+        <button class="btn btn-primary btn-sm" onclick="showRecommendCourse()">+ Recommend Course</button>
+      </div>
+      <p style="color:var(--text3);font-size:13px;margin-bottom:20px">✅ All courses listed are 100% free with a certificate option available. Updated weekly.</p>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px" id="course-filters">
+        ${categories.map((c,i)=>`<button class="btn ${i===0?'btn-primary':'btn-outline'} btn-sm" onclick="filterCourses('${c}',this)">${c}</button>`).join('')}
+      </div>
+
+      <div class="grid-auto" id="courses-grid">
+        ${COURSES.map(courseCard).join('')}
+      </div>
+
+      <div style="margin-top:40px">
+        <div class="section-header" style="margin-bottom:16px">
+          <div><div class="section-title">💡 Community Recommendations</div><div class="section-sub">Courses users want to see added</div></div>
+        </div>
+        <div id="recs-list">
+          ${(recs||[]).map(r=>recCard(r)).join('')}
+          ${!recs?.length ? '<div class="empty"><div class="empty-icon">💡</div><div class="empty-title">No recommendations yet</div><div class="empty-text">Be the first to recommend a course!</div></div>' : ''}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function courseCard(c) {
+  return `
+    <div class="course-card" onclick="window.open('${c.url}','_blank')">
+      <div class="course-thumb" style="background:linear-gradient(135deg,${c.color}88,${c.color}44)">
+        <span style="font-size:52px">${c.icon}</span>
+      </div>
+      <div class="course-body">
+        <div class="course-platform" style="color:var(--accent)">${c.platform}</div>
+        <div class="course-title">${c.title}</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px">${c.desc}</div>
+        <div class="course-meta">
+          <span class="badge badge-green">FREE</span>
+          <span class="badge">${c.category}</span>
+          <span style="font-size:11px;color:var(--text3);margin-left:auto">⏱ ${c.duration}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function recCard(r) {
+  return `
+    <div class="card-sm" style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600">${escHtml(r.course_name)}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">${r.platform?`${r.platform} · `:''} Requested by @${r.profiles?.username||'user'}</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="voteRec('${r.id}',this)">👍 ${r.votes_count}</button>
+    </div>
+  `;
+}
+
+function filterCourses(cat, btn) {
+  document.querySelectorAll('#course-filters .btn').forEach(b=>{ b.className='btn btn-outline btn-sm'; });
+  btn.className = 'btn btn-primary btn-sm';
+  const grid = document.getElementById('courses-grid');
+  const filtered = cat==='All' ? COURSES : COURSES.filter(c=>c.category===cat);
+  grid.innerHTML = filtered.map(courseCard).join('');
+}
+
+function showRecommendCourse() {
+  showModal('Recommend a Course','', `
+    <div class="form-group"><label class="form-label">Course Name *</label><input type="text" class="form-input" id="rec-name" placeholder="e.g. Advanced Machine Learning"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Platform</label><input type="text" class="form-input" id="rec-platform" placeholder="e.g. Coursera"></div>
+      <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="rec-cat" placeholder="e.g. Data Science"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Course URL (if known)</label><input type="url" class="form-input" id="rec-url" placeholder="https://..."></div>
+    <div class="form-group"><label class="form-label">Why do you recommend it?</label><textarea class="form-input" id="rec-desc" placeholder="Tell us why this course would be valuable..."></textarea></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="submitRecommendation()">Submit Recommendation</button>
+  `);
+}
+
+async function submitRecommendation() {
+  const name = document.getElementById('rec-name').value.trim();
+  if (!name) { showToast('Course name required','error'); return; }
+  const { error } = await db.from('course_recommendations').insert({
+    user_id: currentUser.id,
+    course_name: name,
+    platform: document.getElementById('rec-platform').value.trim(),
+    category: document.getElementById('rec-cat').value.trim(),
+    course_url: document.getElementById('rec-url').value.trim(),
+    description: document.getElementById('rec-desc').value.trim()
+  });
+  if (error) { showToast('Failed to submit','error'); return; }
+  closeModal();
+  showToast('Recommendation submitted! We review weekly 🙏','success');
+}
+
+async function voteRec(id, btn) {
+  const { error } = await db.from('course_votes').insert({user_id:currentUser.id,recommendation_id:id});
+  if (!error) {
+    await db.from('course_recommendations').update({votes_count: parseInt(btn.textContent.split(' ')[1]||1)+1}).eq('id',id);
+    btn.textContent = `👍 ${parseInt(btn.textContent.split(' ')[1]||1)+1}`;
+  } else {
+    showToast('Already voted!');
+  }
+}
+
+// ============================================
+// SCHOLARSHIPS
+// ============================================
+const SCHOLARSHIPS = [
+  {title:'Mastercard Foundation Scholars Program',host:'Mastercard Foundation',desc:'Full scholarships for academically talented yet economically disadvantaged youth across Africa. Covers tuition, accommodation, meals and living allowance.',tags:['Africa','Undergraduate','Full Scholarship'],deadline:'Varies by institution',url:'https://mastercardfdn.org/all/scholars/',category:'undergraduate'},
+  {title:'Google Generation Scholarship',host:'Google / Lime Connect',desc:'Scholarship for students with disabilities pursuing Computer Science or related fields. Includes mentorship and Google internship opportunities.',tags:['CS/Tech','Disability','Global'],deadline:'December annually',url:'https://buildyourfuture.withgoogle.com/scholarships',category:'tech'},
+  {title:'DAAD Scholarships',host:'German Academic Exchange Service',desc:'Scholarships for international students to study in Germany. Fully funded with monthly stipend, travel allowance and health insurance.',tags:['Germany','Postgraduate','Fully Funded'],deadline:'October-November',url:'https://www.daad.de/en/study-and-research-in-germany/scholarships/',category:'postgraduate'},
+  {title:'Chevening Scholarships',host:'UK Government',desc:'The UK government\'s global scholarship program offering full funding for one-year Master\'s degrees at UK universities for emerging leaders.',tags:['UK','Masters','Leadership'],deadline:'November annually',url:'https://www.chevening.org/scholarships/',category:'postgraduate'},
+  {title:'Commonwealth Scholarships',host:'Commonwealth Scholarship Commission',desc:'Full scholarships for citizens of Commonwealth countries to study in UK. Covers tuition, airfare, living allowance and thesis grants.',tags:['Commonwealth','Masters/PhD','Fully Funded'],deadline:'October annually',url:'https://cscuk.fcdo.gov.uk/scholarships/',category:'postgraduate'},
+  {title:'Gates Cambridge Scholarship',host:'Gates Cambridge Trust',desc:'Full-cost scholarship for outstanding applicants from outside the UK to pursue a full-time postgraduate degree at Cambridge University.',tags:['Cambridge','Postgraduate','Prestigious'],deadline:'December annually',url:'https://www.gatescambridge.org/',category:'prestigious'},
+  {title:'African Leadership University Scholarship',host:'African Leadership University',desc:'Merit-based scholarships for African students to attend ALU in Rwanda or Mauritius. Focus on developing Africa\'s next generation of leaders.',tags:['Africa','Leadership','Undergraduate'],deadline:'Rolling admissions',url:'https://www.alueducation.com/admissions/scholarships/',category:'undergraduate'},
+  {title:'Coursera Financial Aid',host:'Coursera',desc:'Free access to any Coursera course or specialization for learners who cannot afford the fee. Application reviewed within 15 days.',tags:['Online','All Fields','Free'],deadline:'Rolling',url:'https://www.coursera.org/learn/learning-how-to-learn',category:'online'},
+  {title:'edX Verified Certificates Aid',host:'edX',desc:'Financial assistance program offering free verified certificates from top universities for learners who qualify based on financial need.',tags:['Online','All Fields','Certificate'],deadline:'Rolling',url:'https://www.edx.org/financial-assistance',category:'online'},
+  {title:'Tony Elumelu Foundation Entrepreneurship',host:'Tony Elumelu Foundation',desc:'$5,000 seed capital plus 12-week training program for African entrepreneurs. 10,000 entrepreneurs selected each year.',tags:['Africa','Entrepreneurship','Funding'],deadline:'January annually',url:'https://www.tonyelumelufoundation.org/',category:'entrepreneurship'},
+  {title:'Mandela Washington Fellowship',host:'US State Department',desc:'For young African leaders aged 25-35. Six weeks of leadership training in the US plus opportunities for funding and networking.',tags:['Africa','Leadership','25-35'],deadline:'October annually',url:'https://yali.state.gov/mwf/',category:'leadership'},
+  {title:'Mozilla Foundation Fellowships',host:'Mozilla Foundation',desc:'Fellowships for technologists, activists and researchers working to make the internet a more open, safe and inclusive global resource.',tags:['Tech','Global','Fellowship'],deadline:'Various cycles',url:'https://foundation.mozilla.org/en/fellowships/',category:'fellowship'},
+];
+
+const FREE_UNIVERSITIES = [
+  {name:'MIT OpenCourseWare',desc:'Free access to virtually all MIT course content. 2,500+ courses from one of the world\'s top universities.',url:'https://ocw.mit.edu',flag:'🇺🇸',badge:'MIT'},
+  {name:'Khan Academy',desc:'World-class education for anyone, anywhere. Free personalized learning in math, science, computing, humanities and more.',url:'https://www.khanacademy.org',flag:'🌍',badge:'Free'},
+  {name:'Coursera (Audit)',desc:'Audit thousands of courses from top universities like Stanford, Yale, Johns Hopkins for free. Pay only for certificates.',url:'https://www.coursera.org',flag:'🌍',badge:'Global'},
+  {name:'edX (Audit)',desc:'Free courses from Harvard, MIT, Berkeley and 140+ institutions. Audit for free or earn a verified certificate.',url:'https://www.edx.org',flag:'🌍',badge:'Harvard/MIT'},
+  {name:'African Virtual University',desc:'Pan-African e-learning network offering accredited degrees and courses across 27 African countries in English, French and Portuguese.',url:'https://www.avu.org',flag:'🌍',badge:'Africa'},
+  {name:'OpenLearn - Open University',desc:'Free learning from The Open University UK. Hundreds of free courses with statements of participation.',url:'https://www.open.ac.uk/openlearn/',flag:'🇬🇧',badge:'UK'},
+];
+
+async function renderScholarships() {
+  const categories = ['All','undergraduate','postgraduate','online','tech','africa','fellowship','leadership','entrepreneurship'];
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in">
+      <div class="section-header" style="margin-bottom:8px">
+        <div><div class="section-title">🎓 Schools & Scholarships</div><div class="section-sub">Real opportunities from around the world</div></div>
+      </div>
+      <p style="color:var(--text3);font-size:13px;margin-bottom:20px">All listed scholarships are real and currently active. Always verify details on official websites.</p>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px" id="sch-filters">
+        ${categories.map((c,i)=>`<button class="btn ${i===0?'btn-primary':'btn-outline'} btn-sm" onclick="filterScholarships('${c}',this)" style="text-transform:capitalize">${c}</button>`).join('')}
+      </div>
+
+      <div class="grid-auto" id="scholarships-grid" style="margin-bottom:40px">
+        ${SCHOLARSHIPS.map(scholarshipCard).join('')}
+      </div>
+
+      <div class="section-header" style="margin-bottom:16px">
+        <div><div class="section-title">🏫 Free Online Universities</div><div class="section-sub">World-class education at zero cost</div></div>
+      </div>
+      <div class="grid-3">
+        ${FREE_UNIVERSITIES.map(u=>`
+          <div class="card" style="cursor:pointer" onclick="window.open('${u.url}','_blank')">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <span style="font-size:24px">${u.flag}</span>
+              <span class="badge">${u.badge}</span>
+            </div>
+            <div style="font-size:16px;font-weight:700;margin-bottom:8px">${u.name}</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:14px">${u.desc}</div>
+            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();window.open('${u.url}','_blank')">Visit →</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function scholarshipCard(s) {
+  return `
+    <div class="scholarship-card" onclick="window.open('${s.url}','_blank')">
+      <div class="sch-host">${s.host}</div>
+      <div class="sch-title">${s.title}</div>
+      <div class="sch-desc">${s.desc}</div>
+      <div class="sch-tags">${s.tags.map(t=>`<span class="badge badge-green">${t}</span>`).join('')}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="sch-deadline">📅 ${s.deadline}</div>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();window.open('${s.url}','_blank')">Apply →</button>
+      </div>
+    </div>
+  `;
+}
+
+function filterScholarships(cat, btn) {
+  document.querySelectorAll('#sch-filters .btn').forEach(b=>{ b.className='btn btn-outline btn-sm'; });
+  btn.className = 'btn btn-primary btn-sm';
+  const grid = document.getElementById('scholarships-grid');
+  const filtered = cat==='All' ? SCHOLARSHIPS : SCHOLARSHIPS.filter(s=>s.category===cat||s.tags.some(t=>t.toLowerCase().includes(cat.toLowerCase())));
+  grid.innerHTML = filtered.map(scholarshipCard).join('');
+}
+
+// ============================================
+// MENTORS PAGE
+// ============================================
+async function renderMentors() {
+  const { data: mentors } = await db.from('profiles')
+    .select('*').in('role',['mentor','coach','collaborator'])
+    .order('followers_count',{ascending:false}).limit(30);
+
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in">
+      <div class="section-header" style="margin-bottom:8px">
+        <div><div class="section-title">🧠 Mentors, Coaches & Collaborators</div><div class="section-sub">Connect with experienced professionals</div></div>
+      </div>
+      <p style="color:var(--text3);font-size:13px;margin-bottom:24px">Follow mentors to get their latest posts and insights. Message them directly for guidance.</p>
+      ${mentors?.length ? `<div class="grid-3">${mentors.map(p=>mentorCard(p)).join('')}</div>` :
+        `<div class="empty"><div class="empty-icon">🧠</div><div class="empty-title">No mentors yet</div><div class="empty-text">Mentors and coaches who sign up will appear here. Sign up as a mentor to get featured!</div></div>`}
+    </div>
+  `;
+}
+
+function mentorCard(p) {
+  const initials = (p.full_name||p.username||'?').slice(0,2).toUpperCase();
+  const roleColors = {mentor:'var(--accent)',coach:'var(--accent)',collaborator:'#ffc800'};
+  return `
+    <div class="card" style="text-align:center">
+      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;margin:0 auto 12px;overflow:hidden;cursor:pointer" onclick="navigate('user-profile',{userId:'${p.id}'})">
+        ${p.avatar_url?`<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover">`:initials}
+      </div>
+      <div style="font-weight:700;font-size:16px;margin-bottom:2px;cursor:pointer" onclick="navigate('user-profile',{userId:'${p.id}'})">${p.full_name||p.username}</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:8px">@${p.username}</div>
+      <span class="badge" style="color:${roleColors[p.role]||'var(--accent)'};margin-bottom:10px">${p.role||'mentor'}</span>
+      ${p.bio?`<div style="font-size:13px;color:var(--text2);margin-bottom:12px;line-height:1.5">${p.bio.slice(0,100)}${p.bio.length>100?'...':''}</div>`:''}
+      ${p.skills?.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:12px">${p.skills.slice(0,3).map(s=>`<span class="badge badge-green" style="font-size:10px">${s}</span>`).join('')}</div>`:''}
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">${p.followers_count||0} followers</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-primary btn-sm" onclick="handleFollow('${p.id}',this)">+ Follow</button>
+        <button class="btn btn-outline btn-sm" onclick="openChat('${p.id}','${escHtml(p.full_name||p.username)}')">Message</button>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================
+// INVESTORS PAGE (Coming Soon)
+// ============================================
+function renderInvestors() {
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in" style="text-align:center;padding:80px 20px">
+      <div style="font-size:64px;margin-bottom:20px">💼</div>
+      <div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;margin-bottom:12px">Investors & Collaborators</div>
+      <span class="badge badge-coming" style="font-size:14px;padding:6px 16px;margin-bottom:20px;display:inline-block">Coming Soon</span>
+      <p style="font-size:16px;color:var(--text2);max-width:480px;margin:0 auto 28px;line-height:1.7">
+        We're building a powerful investor-matching platform that will connect dreamers with funders. Get notified when it launches.
+      </p>
+      <div class="card" style="max-width:400px;margin:0 auto;text-align:left">
+        <div style="font-size:16px;font-weight:600;margin-bottom:16px">What's coming:</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${['🔍 Smart matching based on your vision and skills','💬 Direct messaging with investors','📊 Pitch deck submission tools','🤝 Collaboration workspace','📈 Progress tracking and milestones'].map(i=>`<div style="display:flex;gap:10px;align-items:center;font-size:14px;color:var(--text2)">${i}</div>`).join('')}
+        </div>
+      </div>
+      <div style="margin-top:28px">
+        <button class="btn btn-primary" onclick="navigate('forum')">💬 Join the Forum While You Wait</button>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================
+// MESSAGES
+// ============================================
+async function renderMessages(openUserId=null) {
+  const { data: msgs } = await db.from('messages')
+    .select('*,sender:profiles!messages_sender_id_fkey(id,username,full_name,avatar_url),receiver:profiles!messages_receiver_id_fkey(id,username,full_name,avatar_url)')
+    .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+    .order('created_at',{ascending:false});
+
+  // Get unique conversations
+  const convMap = {};
+  (msgs||[]).forEach(m => {
+    const other = m.sender_id === currentUser.id ? m.receiver : m.sender;
+    if (!other) return;
+    if (!convMap[other.id]) convMap[other.id] = { user: other, lastMsg: m };
+  });
+  const convs = Object.values(convMap);
+
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in" style="height:calc(100vh - 130px)">
+      <div class="messages-layout">
+        <div class="conv-list">
+          <div style="padding:16px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px">Messages</div>
+          ${convs.length ? convs.map(c=>convItem(c)).join('') : '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">No conversations yet.<br>Search for users to start chatting!</div>'}
+        </div>
+        <div class="chat-area" id="chat-area">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);flex-direction:column;gap:12px;padding:40px">
+            <div style="font-size:48px">✉️</div>
+            <div>Select a conversation or search for a user</div>
+            <button class="btn btn-primary btn-sm" onclick="showNewMessageModal()">Start New Chat</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (openUserId) openChat(openUserId);
+}
+
+function convItem(c) {
+  const p = c.user;
+  const initials = (p.full_name||p.username||'?').slice(0,2).toUpperCase();
+  return `
+    <div class="conv-item" onclick="openChatInPanel('${p.id}','${escHtml(p.full_name||p.username||'')}',this)">
+      <div class="conv-avatar">
+        ${p.avatar_url?`<img src="${p.avatar_url}">`:initials}
+      </div>
+      <div class="conv-info">
+        <div class="conv-name">${p.full_name||p.username}</div>
+        <div class="conv-preview">${c.lastMsg.content.slice(0,40)}</div>
+      </div>
+    </div>
+  `;
+}
+
+async function openChatInPanel(userId, name, el) {
+  document.querySelectorAll('.conv-item').forEach(c=>c.classList.remove('active'));
+  el?.classList.add('active');
+  await renderChatPanel(userId, name);
+}
+
+async function openChat(userId, name) {
+  if (currentPage !== 'messages') {
+    navigate('messages', {userId});
+    return;
+  }
+  await renderChatPanel(userId, name);
+}
+
+async function renderChatPanel(userId, name) {
+  if (!name) {
+    const {data:p} = await db.from('profiles').select('full_name,username,avatar_url').eq('id',userId).single();
+    name = p?.full_name||p?.username||'User';
+  }
+  activeChatUser = userId;
+  const {data:msgs} = await db.from('messages')
+    .select('*').or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUser.id})`)
+    .order('created_at',{ascending:true});
+
+  // Mark as read
+  await db.from('messages').update({is_read:true}).eq('sender_id',userId).eq('receiver_id',currentUser.id);
+  updateUnreadCounts();
+
+  document.getElementById('chat-area').innerHTML = `
+    <div class="chat-header">
+      <div class="conv-avatar" style="width:38px;height:38px;font-size:14px">👤</div>
+      <div>
+        <div style="font-size:14px;font-weight:600">${escHtml(name)}</div>
+        <div style="font-size:12px;color:var(--text3)">tap to view profile</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="navigate('user-profile',{userId:'${userId}'})">View Profile</button>
+    </div>
+    <div class="chat-messages" id="chat-msgs">
+      ${(msgs||[]).map(m=>msgBubble(m)).join('')}
+    </div>
+    <div class="chat-input">
+      <input type="text" id="msg-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg('${userId}')">
+      <button class="btn btn-primary" onclick="sendMsg('${userId}')">Send</button>
+    </div>
+  `;
+  const msgEl = document.getElementById('chat-msgs');
+  if (msgEl) msgEl.scrollTop = msgEl.scrollHeight;
+}
+
+function msgBubble(m) {
+  const mine = m.sender_id === currentUser.id;
+  return `<div style="display:flex;flex-direction:column;align-items:${mine?'flex-end':'flex-start'}">
+    <div class="msg-bubble ${mine?'msg-mine':'msg-theirs'}">${escHtml(m.content)}</div>
+    <div class="msg-time" style="${mine?'text-align:right':''};color:var(--text3)">${getTimeAgo(m.created_at)}</div>
+  </div>`;
+}
+
+async function sendMsg(receiverId) {
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  const { data, error } = await db.from('messages').insert({sender_id:currentUser.id,receiver_id:receiverId,content:text}).select().single();
+  if (error) { showToast('Failed to send','error'); return; }
+  const msgs = document.getElementById('chat-msgs');
+  if (msgs) {
+    msgs.insertAdjacentHTML('beforeend', msgBubble(data));
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+  // Notify
+  await db.from('notifications').insert({user_id:receiverId,actor_id:currentUser.id,type:'message',message:`${currentProfile?.username} sent you a message`});
+}
+
+function showNewMessageModal() {
+  showModal('New Message','',`
+    <div class="form-group"><label class="form-label">Search user</label>
+    <input type="text" class="form-input" id="new-msg-search" placeholder="@username" oninput="searchForNewMsg(this.value)"></div>
+    <div id="new-msg-results"></div>
+  `);
+}
+
+async function searchForNewMsg(q) {
+  if (!q.trim()) return;
+  const {data} = await db.from('profiles').select('id,username,full_name,avatar_url').ilike('username',`%${q}%`).limit(5);
+  document.getElementById('new-msg-results').innerHTML = (data||[]).map(p=>`
+    <div class="search-result-item" onclick="closeModal();openChat('${p.id}','${escHtml(p.full_name||p.username||'')}')">
+      <div class="conv-avatar" style="width:36px;height:36px;font-size:13px">${p.avatar_url?`<img src="${p.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`:((p.full_name||p.username||'?').slice(0,2).toUpperCase())}</div>
+      <div><div style="font-size:14px;font-weight:600">${p.full_name||p.username}</div><div style="font-size:12px;color:var(--text3)">@${p.username}</div></div>
+    </div>
+  `).join('') || '<div style="padding:12px;color:var(--text3);font-size:13px">No users found</div>';
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+async function renderNotifications() {
+  const {data:notifs} = await db.from('notifications')
+    .select('*,actor:profiles!notifications_actor_id_fkey(username,full_name,avatar_url)')
+    .eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(50);
+
+  // Mark all as read
+  await db.from('notifications').update({is_read:true}).eq('user_id',currentUser.id);
+  document.getElementById('notif-badge').style.display='none';
+  document.getElementById('notif-dot').style.display='none';
+
+  const icons = {like:'❤️',comment:'💬',follow:'👤',friend_request:'👋',friend_accepted:'🤝',message:'✉️',reply:'↩️'};
+  const bgColors = {like:'rgba(252,92,125,.1)',comment:'rgba(124,92,252,.1)',follow:'rgba(92,252,184,.1)',friend_request:'rgba(255,200,0,.1)',message:'rgba(124,92,252,.1)'};
+
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in">
+      <div class="section-header" style="margin-bottom:20px">
+        <div><div class="section-title">🔔 Notifications</div></div>
+      </div>
+      ${notifs?.length ? `
+        <div class="card" style="padding:0;overflow:hidden">
+          ${notifs.map(n=>`
+            <div class="notif-item ${!n.is_read?'unread':''}">
+              <div class="notif-icon" style="background:${bgColors[n.type]||'var(--surface2)'}">
+                ${icons[n.type]||'🔔'}
+              </div>
+              <div style="flex:1">
+                <div class="notif-text">${n.message||'You have a new notification'}</div>
+                <div class="notif-time">${getTimeAgo(n.created_at)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      ` : `<div class="empty"><div class="empty-icon">🔔</div><div class="empty-title">No notifications yet</div><div class="empty-text">Start connecting with others to see activity here</div></div>`}
+    </div>
+  `;
+}
+
+// ============================================
+// PROFILE
+// ============================================
+async function renderProfile(userId) {
+  const uid = userId || currentUser?.id;
+  const {data:profile} = await db.from('profiles').select('*').eq('id',uid).single();
+  if (!profile) { document.getElementById('content').innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">User not found</div></div>'; return; }
+
+  const isOwn = uid === currentUser?.id;
+  const {data:posts} = await db.from('posts').select('*,profiles(username,full_name,avatar_url)').eq('user_id',uid).order('created_at',{ascending:false});
+  const {data:followData} = isOwn ? {data:null} : await db.from('follows').select('id').eq('follower_id',currentUser.id).eq('following_id',uid).single();
+  const {data:friendData} = isOwn ? {data:null} : await db.from('friend_requests').select('id,status,sender_id').or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${uid}),and(sender_id.eq.${uid},receiver_id.eq.${currentUser.id})`).single();
+
+  const isFollowing = !!followData;
+  let friendStatus = friendData?.status;
+  let friendBtn = '';
+  if (!isOwn) {
+    if (!friendData) friendBtn = `<button class="btn btn-outline btn-sm" onclick="sendFriendRequest('${uid}',this)">👋 Add Friend</button>`;
+    else if (friendStatus==='pending' && friendData.sender_id===currentUser.id) friendBtn = `<button class="btn btn-outline btn-sm" disabled>Request Sent</button>`;
+    else if (friendStatus==='pending' && friendData.sender_id===uid) friendBtn = `<button class="btn btn-primary btn-sm" onclick="acceptFriendRequest('${friendData.id}',this)">Accept Friend</button>`;
+    else if (friendStatus==='accepted') friendBtn = `<button class="btn btn-danger btn-sm">✓ Friends</button>`;
+  }
+
+  const initials = (profile.full_name||profile.username||'?').slice(0,2).toUpperCase();
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in">
+      <div class="profile-header">
+        <div class="profile-cover"></div>
+        <div class="profile-info">
+          <div class="profile-pic">
+            ${profile.avatar_url?`<img src="${profile.avatar_url}" alt="">`:initials}
+          </div>
+          <div class="profile-details">
+            <div class="profile-name">${profile.full_name||profile.username||'User'}</div>
+            <div class="profile-username">@${profile.username} · <span class="badge" style="font-size:11px;padding:2px 8px">${profile.role||'learner'}</span></div>
+            ${profile.bio?`<div class="profile-bio">${escHtml(profile.bio)}</div>`:''}
+            ${profile.location?`<div style="font-size:13px;color:var(--text3);margin-bottom:8px">📍 ${profile.location}</div>`:''}
+            ${profile.skills?.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${profile.skills.map(s=>`<span class="badge badge-green">${s}</span>`).join('')}</div>`:''}
+            <div class="profile-stats">
+              <div class="p-stat"><div class="p-stat-num">${profile.followers_count||0}</div><div class="p-stat-label">Followers</div></div>
+              <div class="p-stat"><div class="p-stat-num">${profile.following_count||0}</div><div class="p-stat-label">Following</div></div>
+              <div class="p-stat"><div class="p-stat-num">${posts?.length||0}</div><div class="p-stat-label">Posts</div></div>
+            </div>
+          </div>
+          <div class="profile-actions">
+            ${isOwn ? `<button class="btn btn-primary btn-sm" onclick="showEditProfile()">✏️ Edit Profile</button>` : `
+              <button class="btn btn-primary btn-sm" id="follow-btn-${uid}" onclick="handleFollow('${uid}',this)">${isFollowing?'✓ Following':'+ Follow'}</button>
+              ${friendBtn}
+              <button class="btn btn-outline btn-sm" onclick="openChat('${uid}','${escHtml(profile.full_name||profile.username||'')}')">✉️ Message</button>
+            `}
+          </div>
+        </div>
+      </div>
+
+      ${profile.website||profile.twitter||profile.linkedin?`
+        <div class="card" style="margin-bottom:20px;display:flex;gap:16px;flex-wrap:wrap">
+          ${profile.website?`<a href="${profile.website}" target="_blank" class="btn btn-ghost btn-sm">🌐 Website</a>`:''}
+          ${profile.twitter?`<a href="https://twitter.com/${profile.twitter}" target="_blank" class="btn btn-ghost btn-sm">𝕏 @${profile.twitter}</a>`:''}
+          ${profile.linkedin?`<a href="${profile.linkedin}" target="_blank" class="btn btn-ghost btn-sm">💼 LinkedIn</a>`:''}
+        </div>
+      `:''}
+
+      <div class="section-header" style="margin-bottom:16px">
+        <div class="section-title">📝 Posts</div>
+      </div>
+      ${posts?.length ? posts.map(p=>postCard(p, false)).join('') : '<div class="empty"><div class="empty-icon">📝</div><div class="empty-title">No posts yet</div></div>'}
+    </div>
+  `;
+}
+
+async function handleFollow(userId, btn) {
+  const {data:existing} = await db.from('follows').select('id').eq('follower_id',currentUser.id).eq('following_id',userId).single();
+  if (existing) {
+    await db.from('follows').delete().eq('id',existing.id);
+    btn.textContent = '+ Follow';
+    btn.classList.remove('btn-primary');
+    btn.classList.add('btn-outline');
+  } else {
+    await db.from('follows').insert({follower_id:currentUser.id,following_id:userId});
+    btn.textContent = '✓ Following';
+    btn.classList.remove('btn-outline');
+    btn.classList.add('btn-primary');
+    await db.from('notifications').insert({user_id:userId,actor_id:currentUser.id,type:'follow',message:`${currentProfile?.username} started following you`});
+  }
+}
+
+async function sendFriendRequest(userId, btn) {
+  const {error} = await db.from('friend_requests').insert({sender_id:currentUser.id,receiver_id:userId});
+  if (!error) {
+    btn.textContent = 'Request Sent';
+    btn.disabled = true;
+    await db.from('notifications').insert({user_id:userId,actor_id:currentUser.id,type:'friend_request',message:`${currentProfile?.username} sent you a friend request`});
+    showToast('Friend request sent! 🤝');
+  }
+}
+
+async function acceptFriendRequest(reqId, btn) {
+  await db.from('friend_requests').update({status:'accepted'}).eq('id',reqId);
+  btn.textContent = '✓ Friends';
+  btn.className = 'btn btn-danger btn-sm';
+  showToast('Friend request accepted!','success');
+}
+
+function showEditProfile() {
+  const p = currentProfile;
+  showModal('Edit Profile','',`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name</label><input type="text" class="form-input" id="ep-name" value="${escHtml(p?.full_name||'')}"></div>
+      <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="ep-username" value="${escHtml(p?.username||'')}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="ep-bio" style="min-height:80px">${escHtml(p?.bio||'')}</textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-input" id="ep-location" value="${escHtml(p?.location||'')}" placeholder="City, Country"></div>
+      <div class="form-group"><label class="form-label">Website</label><input type="url" class="form-input" id="ep-website" value="${escHtml(p?.website||'')}" placeholder="https://..."></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Twitter / X</label><input type="text" class="form-input" id="ep-twitter" value="${escHtml(p?.twitter||'')}" placeholder="@handle"></div>
+      <div class="form-group"><label class="form-label">LinkedIn URL</label><input type="url" class="form-input" id="ep-linkedin" value="${escHtml(p?.linkedin||'')}" placeholder="https://linkedin.com/in/..."></div>
+    </div>
+    <div class="form-group"><label class="form-label">Skills (comma-separated)</label><input type="text" class="form-input" id="ep-skills" value="${(p?.skills||[]).join(', ')}" placeholder="Python, Design, Marketing"></div>
+    <div class="form-group"><label class="form-label">Avatar URL</label><input type="url" class="form-input" id="ep-avatar" value="${escHtml(p?.avatar_url||'')}" placeholder="https://...image.jpg"></div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveProfile()">Save Changes</button>
+  `);
+}
+
+async function saveProfile() {
+  const updates = {
+    full_name: document.getElementById('ep-name').value.trim(),
+    username: document.getElementById('ep-username').value.trim().toLowerCase(),
+    bio: document.getElementById('ep-bio').value.trim(),
+    location: document.getElementById('ep-location').value.trim(),
+    website: document.getElementById('ep-website').value.trim(),
+    twitter: document.getElementById('ep-twitter').value.trim().replace('@',''),
+    linkedin: document.getElementById('ep-linkedin').value.trim(),
+    skills: document.getElementById('ep-skills').value.split(',').map(s=>s.trim()).filter(Boolean),
+    avatar_url: document.getElementById('ep-avatar').value.trim(),
+    updated_at: new Date().toISOString()
+  };
+  const {error} = await db.from('profiles').update(updates).eq('id',currentUser.id);
+  if (error) { showToast('Failed to save: '+error.message,'error'); return; }
+  Object.assign(currentProfile, updates);
+  updateSidebarUser();
+  closeModal();
+  showToast('Profile updated! ✅','success');
+  navigate('profile');
+}
+
+// ============================================
+// SETTINGS PAGE
+// ============================================
+function renderSettings() {
+  document.getElementById('content').innerHTML = `
+    <div class="fade-in">
+      <div class="section-title" style="margin-bottom:24px">⚙️ Settings</div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div style="font-size:16px;font-weight:600;margin-bottom:16px">Account</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+            <div><div style="font-size:14px;font-weight:500">Edit Profile</div><div style="font-size:12px;color:var(--text3)">Update your name, bio, skills and more</div></div>
+            <button class="btn btn-outline btn-sm" onclick="showEditProfile()">Edit</button>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
+            <div><div style="font-size:14px;font-weight:500">Email</div><div style="font-size:12px;color:var(--text3)">${currentUser?.email||'Not set'}</div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0">
+            <div><div style="font-size:14px;font-weight:500">Sign Out</div><div style="font-size:12px;color:var(--text3)">Sign out of your account</div></div>
+            <button class="btn btn-danger btn-sm" onclick="signOut()">Sign Out</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px">
+        <div style="font-size:16px;font-weight:600;margin-bottom:16px">📞 Contact Us</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <a href="https://twitter.com/Sol_auris" target="_blank" style="display:flex;align-items:center;gap:10px;color:var(--text2);text-decoration:none;font-size:14px">𝕏 Twitter: @Sol_auris</a>
+          <a href="mailto:alphabenjamin206@gmail.com" style="display:flex;align-items:center;gap:10px;color:var(--text2);text-decoration:none;font-size:14px">✉️ Email: alphabenjamin206@gmail.com</a>
+          <a href="https://wa.me/2349161488011" target="_blank" style="display:flex;align-items:center;gap:10px;color:var(--text2);text-decoration:none;font-size:14px">💬 WhatsApp: +234 916 1488 011</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:16px;font-weight:600;margin-bottom:8px">About The Alpha Space</div>
+        <p style="font-size:14px;color:var(--text2);line-height:1.7">The Alpha Space is a platform dedicated to bringing opportunities to everyone, irrespective of class, age, gender, race, or region. We believe access should be equal. We're here to level the playing field.</p>
+        <p style="font-size:13px;color:var(--text3);margin-top:12px">Version 1.0.0 · Built with ❤️ for Africa and the World</p>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================
+// SEARCH
+// ============================================
+function handleSearch(q) {
+  clearTimeout(searchTimeout);
+  const results = document.getElementById('search-results');
+  if (!q.trim()) { results.style.display='none'; return; }
+  searchTimeout = setTimeout(async () => {
+    const {data} = await db.from('profiles').select('id,username,full_name,avatar_url,role').ilike('username',`%${q}%`).limit(6);
+    if (!data?.length) { results.style.display='none'; return; }
+    results.style.display='block';
+    results.innerHTML = data.map(p=>`
+      <div class="search-result-item" onclick="navigate('user-profile',{userId:'${p.id}'});document.getElementById('search-results').style.display='none';document.getElementById('global-search').value=''">
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;overflow:hidden;flex-shrink:0">
+          ${p.avatar_url?`<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover">`:((p.full_name||p.username||'?').slice(0,2).toUpperCase())}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${p.full_name||p.username}</div>
+          <div style="font-size:12px;color:var(--text3)">@${p.username} · ${p.role||'learner'}</div>
+        </div>
+      </div>
+    `).join('');
+  }, 300);
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-wrap')) {
+    document.getElementById('search-results').style.display='none';
+  }
+});
+
+// ============================================
+// REALTIME
+// ============================================
+function setupRealtime() {
+  if (!currentUser) return;
+  const ch = db.channel(`user-${currentUser.id}`)
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:`user_id=eq.${currentUser.id}`},() => updateUnreadCounts())
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`receiver_id=eq.${currentUser.id}`},(payload) => {
+      updateUnreadCounts();
+      if (activeChatUser === payload.new.sender_id) {
+        const msgs = document.getElementById('chat-msgs');
+        if (msgs) {
+          msgs.insertAdjacentHTML('beforeend', msgBubble(payload.new));
+          msgs.scrollTop = msgs.scrollHeight;
+        }
+      }
+    })
+    .subscribe();
+  realtimeChannels.push(ch);
+}
+
+async function updateUnreadCounts() {
+  if (!currentUser) return;
+  const [{data:n},{data:m}] = await Promise.all([
+    db.from('notifications').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id).eq('is_read',false),
+    db.from('messages').select('id',{count:'exact',head:true}).eq('receiver_id',currentUser.id).eq('is_read',false)
+  ]);
+
+  const nc = n?.length || 0;
+  const mc = m?.length || 0;
+  const nb = document.getElementById('notif-badge');
+  const mb = document.getElementById('msg-badge');
+  const nd = document.getElementById('notif-dot');
+  const md = document.getElementById('msg-dot');
+
+  if (nb) { nb.textContent=nc; nb.style.display=nc>0?'inline':'none'; }
+  if (mb) { mb.textContent=mc; mb.style.display=mc>0?'inline':'none'; }
+  if (nd) nd.style.display = nc>0?'block':'none';
+  if (md) md.style.display = mc>0?'block':'none';
+}
+
+// ============================================
+// MODAL
+// ============================================
+function showModal(title, subtitle, content) {
+  const existing = document.getElementById('global-modal');
+  if (existing) existing.remove();
+  const m = document.createElement('div');
+  m.id='global-modal';
+  m.className='modal-overlay';
+  m.innerHTML = `
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">${title}</div>
+          ${subtitle?`<div style="font-size:13px;color:var(--text3);margin-top:2px">${subtitle}</div>`:''}
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">${content}</div>
+    </div>
+  `;
+  m.addEventListener('click', e => { if (e.target===m) closeModal(); });
+  document.body.appendChild(m);
+}
+
+function closeModal() {
+  document.getElementById('global-modal')?.remove();
+}
+
+// ============================================
+// UTILITIES
+// ============================================
+function showToast(msg, type='info') {
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span>${msg}`;
+  tc.appendChild(t);
+  setTimeout(() => { t.style.animation='fadeOut .3s ease forwards'; setTimeout(()=>t.remove(),300); }, 3500);
+}
+
+function getTimeAgo(ts) {
+  if (!ts) return '';
+  const d = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+  if (d < 60) return 'just now';
+  if (d < 3600) return `${Math.floor(d/60)}m ago`;
+  if (d < 86400) return `${Math.floor(d/3600)}h ago`;
+  if (d < 604800) return `${Math.floor(d/86400)}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getAvatarHtml(p, size=42) {
+  const initials = p ? (p.full_name||p.username||'?').slice(0,2).toUpperCase() : '?';
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:${Math.floor(size*0.35)}px;font-weight:700;overflow:hidden;flex-shrink:0">
+    ${p?.avatar_url ? `<img src="${p.avatar_url}" style="width:100%;height:100%;object-fit:cover">` : initials}
+  </div>`;
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ============================================
+// START
+// ============================================
+init();
+</script>
+</body>
+</html>
